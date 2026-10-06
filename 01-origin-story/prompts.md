@@ -23,7 +23,10 @@ prompt library built from your own questions.
 ---
 
 ### 1.
+open the claude.md file
 
 ### 2.
+What can you reach from here? List what's in this folder, what's in Rook's wiki, and what tables are in Rook's database.
 
 ### 3.
+Give me the TLDR
