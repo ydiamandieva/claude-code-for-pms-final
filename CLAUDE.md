@@ -155,3 +155,8 @@ may fill some of this in.
 - **Actions:** support should reply to the 45 open quiet/vanished tickets;
   watch Ashgrove and Halfmoon (pings down about 20%); overall "other"
   tickets also roughly doubled and that is unexplained.
+
+- The interviews and the tickets cover almost entirely different responders (only Captain Vantage overlaps, with one ticket). Interviews lead with "offers vanish too fast" (3 of 4); tickets lead with "phone too quiet" (32 vs 13). Both are the same problem seen from two ends.
+- The four silent responders are split across the piles: Vesper and Meteor Mite only in interviews, The Undertow and Farlight only in tickets. Dot, Kip and Halloran never filed a ticket, so ticket counts undercount.
+- Possible Supply link, unconfirmed: since 4.2 tickets say maintenance was booked on the marathon day and reminders came after the date, while Halloran said scheduling had improved.
+- Evidence is strong on timing and shape (misses 2.3% to 18%, declines flat) but the timeout is not isolated from the proximity change. Next: get answer times from engineering, talk to Farlight's and The Undertow's handlers, and get support to answer the 45 open quiet/vanished tickets.
