@@ -132,3 +132,26 @@ may fill some of this in.
   four silent responders; seasonality is weak as the main cause.
   Proximity weight not ruled out. Still untested: answer times, actual
   responder scores, prior years, data after 6 Sep.
+
+### Findings from support tickets (Module 1)
+- **147 tickets, 29 Jun to 7 Sep.** Before 4.2: about 5-8 a week, all closed.
+  After 4.2: 20, 27, 32, 25 a week; 83 of 107 still open. Themes were
+  sorted from subject lines and sampled bodies, so counts are approximate.
+- **New since 4.2 (none existed before):** 32 "quiet" tickets (phone not
+  going off) and 13 "offer vanished / lost one" tickets. All 45 are open.
+  First quiet ticket 17 Aug.
+- **Quiet tickets come from four responders only:** Farlight 11, The
+  Undertow 11, Corporal Ashgrove 5, Halfmoon 5. A handler says Farlight went
+  from about 12 pings a week to 4, matching the database. Vanished-offer
+  tickets are wider: 13 across 9 responders.
+- **Spiral evidence:** two handlers wrote that the first ping in 5 or 9 days
+  was missed. Responders quoted: "starting to wonder if im still even in
+  the system." Tickets from 3-5 Sep show Farlight and The Undertow still
+  silent for 6-9 days, even as the overall taken rate recovered.
+- **Tickets undercount:** Vesper and Meteor Mite (pings down about two
+  thirds) filed no tickets; their handlers raised it in interviews instead.
+- **Filter persistence:** 12 tickets, 2 are thank-yous. Real but small.
+  Priya's "noise" call holds.
+- **Actions:** support should reply to the 45 open quiet/vanished tickets;
+  watch Ashgrove and Halfmoon (pings down about 20%); overall "other"
+  tickets also roughly doubled and that is unexplained.
