@@ -106,3 +106,29 @@ may fill some of this in.
   recovered, how "acceptance rate" is defined, and which features were cut
   from 4.2. Rook's wiki and database were not reachable from this session.
 
+
+### Findings from the wiki and database (Module 1)
+- **Rook's database** (5 tables: callouts, pings, responders, handlers,
+  support_tickets; data runs 29 Jun to 6/7 Sep 2026). `pings` has outcome
+  (taken / turned down / missed) but **no answer-time column**, so the
+  60-90s test can't be run yet.
+- **Before vs after 4.2 (12 Aug):** taken 76.6% -> 64.0%; missed 2.3% ->
+  18.0%; turned down 21.1% -> 18.0%. The whole loss went into "missed".
+  Weekly taken was flat at about 77% until 4.2, then 54%, 66%, 67%, 73%
+  (week of 31 Aug), with misses still 12.7%. Recovering, not recovered.
+- **Four responders went almost silent:** Vesper, The Undertow, Meteor
+  Mite, Farlight (pings per day down about 65-75%, most of their remaining
+  pings missed). They are in four different areas and area demand fell
+  evenly, so geography doesn't explain it. Eastgate has Meteor Mite (quiet)
+  and The Gale (busier, about +40%), same area, opposite outcome.
+- **Wiki interviews (Research > Customer interviews, 2-5 Sep):** four
+  handlers, console-redesign calls, not about routing. 3 of 4 said offers
+  vanish before the responder can answer; 2 of 4 described very uneven
+  work (Dot/Vesper, Kip/Meteor Mite vs The Gale). Console asks: bigger
+  text, better handler alerts, dark mode, a warning when filters reset.
+  Halloran raised Supply issues (11-day wait on a cracked vest plate).
+- **Current read:** timeout cut (90s -> 60s) is very likely the main
+  mechanism; the miss-counts-as-decline penalty loop likely explains the
+  four silent responders; seasonality is weak as the main cause.
+  Proximity weight not ruled out. Still untested: answer times, actual
+  responder scores, prior years, data after 6 Sep.
