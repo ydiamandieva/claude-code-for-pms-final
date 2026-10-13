@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ping blast map</title>
+<style>
+/* layout: one scrolling page. Grid of home area x callout area, then the nobody-took-it flow, then one responder's weeks. Blue = taken/own area, gray = turned down, orange = missed/other area, red = nobody took it. */
+:root{--bg:#fcfcfb;--fg:#0b0b0b;--muted:#52514e;--faint:#898781;--line:rgba(11,11,11,.12);--line2:rgba(11,11,11,.35);--card:#f4f3ef;--blue:42,120,214;--orange:235,104,52;--gray:#c3c2b7;--bad:#d03b3b;--blue-ink:#fff;--bad-ink:#fff}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1a1a19;--fg:#f0efec;--muted:#c3c2b7;--faint:#898781;--line:rgba(255,255,255,.12);--line2:rgba(255,255,255,.4);--card:#232321;--blue:57,135,229;--orange:217,89,38;--gray:#5a5954;--bad:#e66767;--blue-ink:#0b0b0b;--bad-ink:#0b0b0b;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#1a1a19;--fg:#f0efec;--muted:#c3c2b7;--faint:#898781;--line:rgba(255,255,255,.12);--line2:rgba(255,255,255,.4);--card:#232321;--blue:57,135,229;--orange:217,89,38;--gray:#5a5954;--bad:#e66767;--blue-ink:#0b0b0b;--bad-ink:#0b0b0b;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif;font-variant-numeric:tabular-nums}
+main{max-width:760px;margin:0 auto;padding:24px 16px 48px}
+h1{font-size:22px;font-weight:500;margin:0 0 4px;text-wrap:balance}
+h2{font-size:18px;font-weight:500;margin:36px 0 4px;text-wrap:balance}
+h3{font-size:14px;font-weight:500;margin:20px 0 6px}
+p{margin:0 0 12px}.sub{color:var(--muted);font-size:14px}
+code{font-size:.9em}
+.note{background:var(--card);border-radius:8px;padding:12px 14px;font-size:14px;color:var(--muted);margin:16px 0}
+button{font:inherit;font-size:14px;color:var(--fg);background:transparent;border:.5px solid var(--line2);border-radius:8px;padding:6px 14px;cursor:pointer}
+button[aria-pressed="true"]{background:var(--card);border-color:var(--fg)}
+button:focus-visible{outline:2px solid var(--fg);outline-offset:2px}
+#gw{overflow-x:auto;margin-top:12px}
+#grid{display:grid;grid-template-columns:92px repeat(15,minmax(0,1fr));gap:2px;min-width:540px}
+.cell{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:11px;border-radius:3px;cursor:pointer}
+.col{writing-mode:vertical-rl;transform:rotate(180deg);font-size:11px;color:var(--muted);height:84px;white-space:nowrap;justify-self:center}
+.row{font-size:11px;color:var(--muted);text-align:right;padding-right:6px;align-self:center;white-space:nowrap}
+#legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin:12px 0 4px}
+#legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px}
+#ro{min-height:44px;font-size:14px;color:var(--muted)}
+.fl{margin:0 0 12px}
+.fl .lab{font-size:13px;color:var(--muted);margin:0 0 3px}
+.stack{display:flex;gap:2px;height:28px}
+.stack span{display:flex;align-items:center;justify-content:center;font-size:12px;border-radius:3px;min-width:0;overflow:hidden;white-space:nowrap}
+.tk{background:rgb(var(--blue));color:var(--blue-ink)}.dn{background:var(--gray);color:var(--fg)}.ms{background:rgb(var(--orange));color:#0b0b0b}.nb{background:var(--bad);color:var(--bad-ink)}
+.cap{font-size:13px;color:var(--muted);margin:3px 0 0}
+.wkc{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:4px;align-items:end;height:130px;margin-top:10px}
+.wkc div{display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%;font-size:11px;color:var(--muted)}
+.wkc b{display:block;width:100%;max-width:34px;border-radius:3px 3px 0 0;font-weight:400}
+.wkl{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:4px;font-size:11px;color:var(--muted);text-align:center;margin-top:4px}
+.wk{display:grid;grid-template-columns:56px 1fr;align-items:center;gap:4px 10px;margin:8px 0;font-size:13px}
+.wk .bar{display:flex;height:22px;gap:2px}
+.wk .bar span{display:block;height:100%;border-radius:3px}
+.wk .t{grid-column:2;color:var(--muted);margin-top:-2px}
+.table-wrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:13px;margin-top:12px}
+th,td{text-align:right;padding:4px 8px;border-bottom:.5px solid var(--line);white-space:nowrap}th:first-child,td:first-child{text-align:left}
+th{font-weight:500;color:var(--muted)}
+.sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin:0 4px 0 12px;vertical-align:-1px}.sw:first-child{margin-left:0}
+</style>
+</head>
+<body>
+<main>
+<h1>Ping blast map</h1>
+<p class="sub">Rook Dispatch · pings from 29 Jun to 6 Sep 2026 · release 4.2 shipped 12 Aug</p>
+<div class="note">Observed from the Rook database tables <code>pings</code>, <code>callouts</code> and <code>responders</code>. This is a grid, not a geographic map: the database holds area names only, with no coordinates. "Home area" is the area a responder usually covers. Before = 29 Jun to 11 Aug (44 days). After = 12 Aug to 6 Sep (26 days). Fictional teaching data from a Product School course.</div>
+
+<h2>Where pings landed</h2>
+<p class="sub">Rows: where the responder usually works. Columns: where the callout happened. Outlined cells are a responder's own area. Cells show pings per week so the two periods compare fairly.</p>
+<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+<button id="b0" aria-pressed="true">Before 4.2</button><button id="b1" aria-pressed="false">After 4.2</button><button id="b2" aria-pressed="false">Change</button>
+<span id="unit" class="sub"></span></div>
+<div id="gw"><div id="grid" role="img" aria-label="Grid of pings per week by responder home area and callout area"></div></div>
+<div id="legend"></div>
+<div id="ro">Hover or tap a cell for exact counts.</div>
+<p>Before 4.2, 899 of 1,085 pings (83%) were for a responder's own area, and none of the 186 pings outside it were taken. After 4.2, 370 of 611 (61%) were in the responder's own area, and 86 of the 391 takes (22%) came from responders pinged outside their home area. The data shows who got pinged and where the callout was. It does not show the ranking, the travel time or the score, so it cannot say whether this is the proximity change working as intended or a side effect of four responders going quiet.</p>
+
+<h2>The nobody-took-it flow</h2>
+<p class="sub">Each callout starts with one ping. If that responder turns it down or misses it, the next responder is pinged, and so on. Here is how callouts ended, before and after 4.2.</p>
+<h3>1. The first ping</h3>
+<div id="f1"></div>
+<h3>2. When the first ping fails, who rescues the callout?</h3>
+<div id="f2"></div>
+<h3>3. Callouts nobody took, by pings sent</h3>
+<div id="f3"></div>
+<h3>Share of callouts nobody took, by week</h3>
+<div class="wkc" id="wkc" role="img" aria-label="Weekly share of callouts nobody took: between 3 and 8 percent before 4.2, between 6 and 14 percent after"></div>
+<div class="wkl" id="wkl"></div>
+<p class="cap">Week starting. The 10 Aug week mixes both periods. Gray = before 4.2, red = from the 10 Aug week on.</p>
+<p style="margin-top:14px">Nobody took 48 of 879 callouts before 4.2 (5.5%) and 49 of 440 after (11.1%). Observed. Two things moved. First, far more first pings failed: 27% before, 42% after, mostly because the share missed went from 3% to 21%. Second, a failed first ping was less often rescued: 20% ended with nobody before, 27% after. By simple arithmetic on these counts, about half of the doubling comes from each. These are small numbers (48 and 49 callouts), so treat the split as a rough guide.</p>
+<p>One thing the data cannot explain: 42 of the 48 untaken callouts before, and 40 of the 49 after, had only one ping sent. The code walks down the whole list of available responders, so a one-ping ending most likely means only one responder was available. That needs the staff engineer to confirm, and it points at availability as much as at ranking.</p>
+
+<h2>One responder: Farlight (home area: Uptown)</h2>
+<p class="sub">Pings per week, split by whether the callout was in her own area. 4.2 shipped on Wed 12 Aug, inside the week of 10 Aug.</p>
+<div id="fw"></div>
+<p style="margin-top:6px"><span class="sw" style="background:rgb(var(--blue))"></span>Own area (Uptown)<span class="sw" style="background:rgb(var(--orange))"></span>Another area</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Week starting</th><th>Pinged</th><th>Own area</th><th>Other areas</th><th>Taken</th><th>Missed</th></tr></thead>
+<tbody id="ft"></tbody>
+</table></div>
+<p style="margin-top:12px">Observed: before the release about four in five of her pings were in Uptown, and she took almost all of those. She was never taken for a callout outside Uptown, before or after. After 12 Aug her Uptown pings dried up: she had six in the week of 10 Aug (the four after the release were two taken and two missed), two the week after, and none after that. Her last ping was on 28 Aug, and it was outside her home area. Inferred, not shown here: her silence follows missed offers under the 60-second window. The data has no answer times or scores to confirm it.</p>
+</main>
+<script>
+var RAW="Eastgate,Eastgate,138,112,63,51;Eastgate,Foundry Row,6,0,7,0;Eastgate,Midtown,8,0,13,0;Foundry Row,Eastgate,7,0,8,0;Foundry Row,Foundry Row,44,43,22,21;Foundry Row,Uptown,6,0,9,5;Greenway,Greenway,36,33,16,14;Greenway,Harborside,2,0,6,4;Greenway,Southport,1,0,6,0;Harborside,Greenway,1,0,2,0;Harborside,Harborside,63,58,9,3;Harborside,Riverside,4,0,1,0;Harborside,Southport,7,0,2,0;Hillcrest,Hillcrest,59,56,30,28;Hillcrest,Midtown,13,0,10,0;Hillcrest,Old Town,4,0,19,14;Kingsbridge,Kingsbridge,54,50,28,22;Kingsbridge,Northfield,4,0,4,0;Kingsbridge,Uptown,5,0,20,14;Lakeshore,Lakeshore,35,34,19,17;Lakeshore,Old Town,6,0,12,4;Lakeshore,Westbury,4,0,1,0;Midtown,Eastgate,14,0,6,0;Midtown,Hillcrest,3,0,5,0;Midtown,Midtown,76,72,38,34;Midtown,Old Town,2,0,21,13;Mill District,Mill District,46,45,22,20;Mill District,Riverside,5,0,4,0;Mill District,Uptown,6,0,16,9;Northfield,Kingsbridge,4,0,4,0;Northfield,Northfield,52,49,21,19;Northfield,Westbury,7,0,4,0;Old Town,Hillcrest,2,0,3,0;Old Town,Lakeshore,3,0,2,0;Old Town,Midtown,9,0,2,0;Old Town,Old Town,72,70,10,5;Riverside,Harborside,6,0,11,9;Riverside,Mill District,4,0,5,0;Riverside,Riverside,41,39,23,17;Southport,Greenway,7,0,4,0;Southport,Harborside,7,0,19,14;Southport,Southport,68,65,40,31;Uptown,Foundry Row,5,0,0,0;Uptown,Kingsbridge,8,0,2,0;Uptown,Mill District,3,0,3,0;Uptown,Uptown,59,55,6,2;Westbury,Lakeshore,4,0,5,0;Westbury,Northfield,9,0,5,0;Westbury,Westbury,56,50,23,21";
+var FL=[["29 Jun",12,10,2,9,0],["6 Jul",12,10,2,9,0],["13 Jul",11,8,3,8,1],["20 Jul",12,10,2,9,1],["27 Jul",13,11,2,10,0],["3 Aug",12,8,4,8,1],["10 Aug",10,6,4,4,4],["17 Aug",3,2,1,0,2],["24 Aug",1,0,1,0,1],["31 Aug",0,0,0,0,0]];
+var WK=[["29 Jun",141,9],["6 Jul",139,8],["13 Jul",138,5],["20 Jul",144,12],["27 Jul",137,5],["3 Aug",138,4],["10 Aug",110,14],["17 Aug",121,17],["24 Aug",124,16],["31 Aug",127,7]];
+var PW=44/7,QW=26/7,A=["Eastgate","Foundry Row","Greenway","Harborside","Hillcrest","Kingsbridge","Lakeshore","Midtown","Mill District","Northfield","Old Town","Riverside","Southport","Uptown","Westbury"];
+var M={};RAW.split(";").forEach(function(s){var p=s.split(",");M[p[0]+"|"+p[1]]={pp:+p[2],pt:+p[3],qp:+p[4],qt:+p[5]};});
+var mode=0,g=document.getElementById("grid"),ro=document.getElementById("ro");
+function val(c,m){if(!c)return 0;return m===0?c.pp/PW:m===1?c.qp/QW:c.qp/QW-c.pp/PW;}
+function css(n){return getComputedStyle(document.documentElement).getPropertyValue(n).trim();}
+function fill(v,m){var b=css("--blue"),o=css("--orange");
+ if(m<2){var a=Math.min(1,Math.abs(v)/22);return v>0.05?"rgba("+b+","+(0.12+0.88*a).toFixed(2)+")":"transparent";}
+ if(Math.abs(v)<0.3)return "transparent";var a2=Math.min(1,Math.abs(v)/9);
+ return v>0?"rgba("+o+","+(0.15+0.85*a2).toFixed(2)+")":"rgba("+b+","+(0.15+0.85*a2).toFixed(2)+")";}
+function ink(v,m){return Math.abs(v)/(m<2?22:9)>0.6?css("--blue-ink"):"var(--fg)";}
+function show(h,c){var x=M[h+"|"+c]||{pp:0,pt:0,qp:0,qt:0};
+ ro.textContent="Responders based in "+h+", callouts in "+c+": before "+x.pp+" pings ("+x.pt+" taken), after "+x.qp+" pings ("+x.qt+" taken).";}
+function render(){
+ g.innerHTML="";g.appendChild(document.createElement("div"));
+ A.forEach(function(c){var d=document.createElement("div");d.className="col";d.textContent=c;g.appendChild(d);});
+ A.forEach(function(h){
+  var l=document.createElement("div");l.className="row";l.textContent=h;g.appendChild(l);
+  A.forEach(function(c){
+   var v=val(M[h+"|"+c],mode),d=document.createElement("div");d.className="cell";
+   d.textContent=Math.abs(v)>=(mode===2?0.5:1)?(mode===2&&v>0?"+":"")+Math.round(v):"";
+   d.style.background=fill(v,mode);d.style.color=ink(v,mode);
+   d.style.boxShadow="inset 0 0 0 "+(h===c?"1.5px var(--muted)":".5px var(--line)");
+   d.title=h+" responders, "+c+" callouts: "+(Math.round(v*10)/10)+" per week";
+   d.onmouseover=d.onclick=function(){show(h,c);};g.appendChild(d);});});
+ document.getElementById("unit").textContent=mode===2?"Change in pings per week (after minus before)":"Pings per week";
+ var b=css("--blue"),o=css("--orange");
+ document.getElementById("legend").innerHTML=mode===2?"<span><i style='background:rgba("+o+",.85)'></i>more pings after</span><span><i style='background:rgba("+b+",.85)'></i>fewer pings after</span>":"<span><i style='background:rgba("+b+",.25)'></i>few</span><span><i style='background:rgba("+b+",.95)'></i>about 22 a week</span>";
+ for(var i=0;i<3;i++)document.getElementById("b"+i).setAttribute("aria-pressed",i===mode);
+}
+for(var i=0;i<3;i++)(function(k){document.getElementById("b"+k).onclick=function(){mode=k;render();};})(i);
+render();
+if(window.matchMedia)matchMedia("(prefers-color-scheme: dark)").addEventListener("change",render);
+
+function pct(n,t){return Math.round(1000*n/t)/10;}
+function stack(parts,total){return "<div class='stack'>"+parts.map(function(p){var w=100*p[1]/total;return "<span class='"+p[2]+"' style='width:"+w+"%'>"+(w>=11?p[1]:"")+"</span>";}).join("")+"</div>";}
+function line(label,parts,total,cap){return "<div class='fl'><p class='lab'>"+label+"</p>"+stack(parts,total)+"<p class='cap'>"+cap+"</p></div>";}
+var f1=document.getElementById("f1"),f2=document.getElementById("f2"),f3=document.getElementById("f3");
+f1.innerHTML=
+ line("Before 4.2 · 879 callouts",[["Taken",643,"tk"],["Turned down",212,"dn"],["Missed",24,"ms"]],879,"Taken 643 (73.2%) · turned down 212 (24.1%) · missed 24 (2.7%)")+
+ line("After 4.2 · 440 callouts",[["Taken",257,"tk"],["Turned down",89,"dn"],["Missed",94,"ms"]],440,"Taken 257 (58.4%) · turned down 89 (20.2%) · missed 94 (21.4%)");
+f2.innerHTML=
+ line("Before 4.2 · 236 callouts whose first ping failed",[["Taken later",188,"tk"],["Nobody took it",48,"nb"]],236,"Taken by a later responder 188 (79.7%) · nobody took it 48 (20.3%). After a first-ping decline: 167 rescued, 45 not. After a first-ping miss: 21 rescued, 3 not.")+
+ line("After 4.2 · 183 callouts whose first ping failed",[["Taken later",134,"tk"],["Nobody took it",49,"nb"]],183,"Taken by a later responder 134 (73.2%) · nobody took it 49 (26.8%). After a first-ping decline: 65 rescued, 24 not. After a first-ping miss: 69 rescued, 25 not.");
+f3.innerHTML=
+ line("Before 4.2 · 48 callouts nobody took",[["1 ping",42,"nb"],["2 pings",6,"dn"]],48,"One ping sent: 42 (88%) · two pings: 6 · three or more: 0")+
+ line("After 4.2 · 49 callouts nobody took",[["1 ping",40,"nb"],["2 pings",8,"dn"],["3",1,"dn"]],49,"One ping sent: 40 (82%) · two pings: 8 · three pings: 1");
+var wc=document.getElementById("wkc"),wl=document.getElementById("wkl");
+WK.forEach(function(r,i){var s=100*r[2]/r[1],post=i>=6;
+ var d=document.createElement("div");d.innerHTML="<span>"+Math.round(s)+"%</span><b style='height:"+(s/16*100)+"%;background:"+(post?"var(--bad)":"var(--gray)")+"'></b>";d.title=r[0]+": "+r[2]+" of "+r[1]+" callouts";wc.appendChild(d);
+ var l=document.createElement("span");l.textContent=r[0];wl.appendChild(l);});
+
+var fw=document.getElementById("fw"),ft=document.getElementById("ft");
+FL.forEach(function(r){
+ var d=document.createElement("div");d.className="wk";
+ d.innerHTML="<span>"+r[0]+"</span><div class='bar'><span style='width:"+(r[2]/13*100)+"%;background:rgb(var(--blue))'></span><span style='width:"+(r[3]/13*100)+"%;background:rgb(var(--orange))'></span></div><span class='t'>"+r[1]+" pinged, "+r[4]+" taken, "+r[5]+" missed</span>";
+ fw.appendChild(d);
+ var t=document.createElement("tr");t.innerHTML="<td>"+r[0]+"</td><td>"+r[1]+"</td><td>"+r[2]+"</td><td>"+r[3]+"</td><td>"+r[4]+"</td><td>"+r[5]+"</td>";ft.appendChild(t);});
+</script>
+</body>
+</html>

@@ -160,3 +160,11 @@ may fill some of this in.
 - The four silent responders are split across the piles: Vesper and Meteor Mite only in interviews, The Undertow and Farlight only in tickets. Dot, Kip and Halloran never filed a ticket, so ticket counts undercount.
 - Possible Supply link, unconfirmed: since 4.2 tickets say maintenance was booked on the marathon day and reminders came after the date, while Halloran said scheduling had improved.
 - Evidence is strong on timing and shape (misses 2.3% to 18%, declines flat) but the timeout is not isolated from the proximity change. Next: get answer times from engineering, talk to Farlight's and The Undertow's handlers, and get support to answer the 45 open quiet/vanished tickets.
+
+### Findings from the ping analysis (Module 3)
+- Write-up is in `00-rook/4-2-impact-analysis.md`. Visuals are in `00-rook/ping-geography.html`, also a private artifact, "Ping blast map" (https://claude.ai/artifact/BRznK5T3qmzMHcFeo2ZZNX). `callout-history.csv` matches the database weekly totals exactly, so it is not independent evidence.
+- Timing: missed pings jump on release day (12 Aug, 28% vs 0-5% a day before), and the first "offer vanished" ticket was filed the same day. The four silent responders' pings stop about 14-15 Aug, and handlers wrote in about 3 days later. Every "N pings in the last 7 days" ticket matches the database exactly.
+- Callouts nobody took doubled, 5.5% to 11.1%. Roughly half is more failed first pings (27% to 42%) and half is worse rescue (20% to 27%). 42 of 48 before and 40 of 49 after had only one ping sent, which probably means only one responder was available (to confirm).
+- Pings outside a responder's home area went from 17% to 39%, and takes outside it from 0 of 831 to 86 of 391. Cause unknown: proximity working, or a side effect of the four going quiet.
+- Ashgrove and Halfmoon's quiet looks like demand (their areas fell about 30%). The four silent ones are in areas that fell only 11-18%. Tension: 4.2 lowered the acceptance weight, which should soften the penalty, yet four collapsed, so the loop story needs real scores.
+- Still needed: answer times, score history, prior-year numbers, data after 6 Sep, and who was available on the one-ping callouts.
