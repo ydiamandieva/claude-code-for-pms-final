@@ -4,12 +4,12 @@
 
 ### Questions and answers
 
-- **"Draft me a one-page brief for what we'd build instead: who it's for, what changes for that person, what it deliberately doesn't do."** Read `00-rook/company/` first. It holds only one file, Priya's handover note (`notes/handoff-from-priya.docx`). The glossary, team roster and Slack thread the student expected were not there. Read `05-super-speed/director-request.txt`, the routing code (`history.py`, `config.py`, `routing.py`, `offer.py`, `availability.py`, `CHANGELOG.md`) and `00-rook/4-2-impact-analysis.md`. Wrote `05-super-speed/quiet-responder-brief.md`. Two people it is for: the responder who has gone quiet, and the handler (Kip). The brief says what changes for each, what it deliberately does not do, how we'd know it worked, and what must be checked before anyone builds.
+- **"Draft me a one-page brief for what we'd build instead: who it's for, what changes for that person, what it deliberately doesn't do."** Read `00-rook/company/` first. It holds only one file, Priya's handover note (`notes/handoff-from-priya.docx`). The glossary, team roster and Slack thread the student expected were not there. Read `05-super-speed/director-request.txt`, the routing code (`history.py`, `config.py`, `routing.py`, `offer.py`, `availability.py`, `CHANGELOG.md`) and `00-rook/4-2-impact-analysis.md`. Wrote `05-super-speed/brief.md`. Two people it is for: the responder who has gone quiet, and the handler (Kip). The brief says what changes for each, what it deliberately does not do, how we'd know it worked, and what must be checked before anyone builds.
 - **The student's framing was "being quiet is exactly what stops them being asked".** Corrected in the brief and in chat: the four quiet responders were still pinged about once a day between 19 Aug and 6 Sep (20 pings, 15 missed). The loop is that a miss costs the same as a "no" (-0.12), only a "yes" gives +0.08, and scores never ease back. The blocker is answering when asked, not being asked at all.
 - **"Walk me through what Kip would see change next time Meteor Mite goes quiet."** Walked through a timeline with the brief against today. Found two gaps: the brief did not say how a handler notices the Quiet marker (3 of 4 interviewed handlers asked for an alert, no ticket did), and a two-week window is slow (Mite's pings stopped around 14-15 Aug; a 14-day trigger would fire near the end of August, the first quiet ticket was 17 Aug). Both were added to the brief.
 - **"Rework the brief to one pager."** Cut from about 700 words to about 450 without dropping any section.
 - **"One-line pitch for the person it happens to."** To the responder: "If your phone's gone quiet, you're still on the list. We'll tell you what happened to your last few offers, and one answered call now starts bringing you back." To Kip: "When one of your responders goes quiet, you'll see it that week, with the reason, and one tap to check in on them." Caveat given: "one answered call starts bringing you back" is not proven until real scores are seen.
-- **"Build a clickable prototype."** Built `05-super-speed/quiet-responder-prototype.html`, a single file with no dependencies. It has a handler console and a responder phone view. Clicking Check in opens a dialog with the evidence and a confirm box, then clears the Quiet marker, adds an override-log line and changes the phone message. Tested in the browser pane, in its narrow layout only.
+- **"Build a clickable prototype."** Built `05-super-speed/prototype.html`, a single file with no dependencies. It has a handler console and a responder phone view. Clicking Check in opens a dialog with the evidence and a confirm box, then clears the Quiet marker, adds an override-log line and changes the phone message. Tested in the browser pane, in its narrow layout only.
 - **"If I'd only described this, what would I still not know?"** Building forced four decisions the brief had skipped: who vouches for the reset (the confirm checkbox was my addition), what "usual" means as a baseline, whether the console can read each responder's last yes and last outcomes, and the wording of the phone message (it claims missed offers count for less, which holds only if built). It still cannot show whether the idea works, whether Kip would use it, or how a responder would feel.
 
 ### Findings
@@ -38,12 +38,12 @@
 
 ### Files and artifacts made
 
-- `05-super-speed/quiet-responder-brief.md` (one-page brief, rewritten twice).
-- `05-super-speed/quiet-responder-prototype.html` (clickable prototype, sample data).
+- `05-super-speed/brief.md` (one-page brief, rewritten twice).
+- `05-super-speed/prototype.html` (clickable prototype, sample data).
 - `05-super-speed/prompts.md` (six prompts saved).
 - `05-super-speed/session-notes.md` (this file).
 - No published artifact this session.
-- The Module 5 wrap-up expects `05-super-speed/brief.md` and `05-super-speed/prototype.html`. The files made have different names, and nothing was renamed or recreated.
+- The Module 5 wrap-up expects `05-super-speed/brief.md` and `05-super-speed/prototype.html`. The files were first saved as `quiet-responder-brief.md` and `quiet-responder-prototype.html`. At the student's request they were renamed to `brief.md` and `prototype.html` after the first wrap-up, and the references in CLAUDE.md and these notes were updated.
 
 ### What we couldn't see
 
