@@ -36,11 +36,11 @@ Farlight, The Undertow, Vesper and Meteor Mite took 3 of 40 first pings after 4.
 
 - Going quiet to a handler seeing it: from days, via a ticket, to the same day.
 - A responder with a "yes" after a quiet spell is back near their area's usual rate within 2 weeks (threshold to set).
-- Fewer "phone quiet" tickets: 32 in the 27 days after 4.2, none before.
+- Fewer "phone quiet" tickets about the four: about 22 of the 32 in the 27 days after 4.2 (none before) are about Farlight and The Undertow. The other 10 are about Corporal Ashgrove and Halfmoon, whose quiet looks like falling demand in their areas, so this brief doesn't aim at them. Target to set.
 
 ## Before anyone builds
 
 1. Real score history and rank order from the staff engineer. If the four aren't at the floor, this brief changes.
-2. Why they miss (slow answers, push delivery, phones), from the engineering manager. If it is delivery, the score is a side issue.
+2. Why they miss (slow answers, push delivery, phones), from the engineering manager. If it is delivery, the score is a side issue. The database leans away from delivery: refusals held steady after 4.2 (the four 21.6% to 17.9%, the other twelve 20.9% to 18.0%) while "taken" fell and "missed" rose. Random delivery failures would have cut refusals too. It looks more like yeses are slower than refusals and now run out of time. The four's after-4.2 figures rest on 56 pings, and there are no answer times or push logs to confirm. If it is the wait, the score fix only softens the damage and the 90s test is the real lever.
 3. Data after 6 Sep. All of the above is six weeks old.
 4. Whether a handler override counts as a "yes", and whether scores survive a restart.
