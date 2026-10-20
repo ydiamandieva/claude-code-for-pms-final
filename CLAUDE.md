@@ -176,3 +176,11 @@ may fill some of this in.
 - Open: answer times for yes, real score history, what the 4.2 duplicate-push fix changed, and who was available on one-ping callouts. Private artifact "The Silent Four" (https://claude.ai/artifact/VSSt7sfw6qSUdtbZy6f8Ks), source in `00-rook/silent-four-case-file.html`.
 - Superseded: "timeout cut is very likely the main mechanism" (Module 1 wiki and database read, and the Module 3 working theory order) is now unproven, because of the 40s ceiling on refusals. Likewise the Module 3 "tension" about the lowered acceptance weight is mostly resolved: the weight only caps how much a bad score can cost (about 19 minutes of travel), and the miss count drives the loop.
 - Full detail: 04-x-ray-vision/session-notes.md (2026-10-20).
+
+- Re-run of the 4.2 analysis (Module 3, 20 Oct): the 12.6-point fall in "taken" (76.6% to 64.0%) is about 8 points from the 12 responders who did not go quiet (77.0% to 68.1%, missed 2.1% to 13.9%) and about 5 from the four (75.5% to 23.2%, on 56 pings). The miss spike is wide: all 16 responders, all 15 areas, all day-parts and weekdays, starting 09:04 on 12 Aug.
+- The extra untaken callouts are outside the quiet responders' own areas (5.4% to 13.0%; inside them 5.7% to 5.0%). First ping to the callout area's own responder fell 80% to 61% (72% in areas with no quiet responder), the opposite of the proximity goal.
+- 4.2 shipped six changes: wait 90 to 60s, ranking weights, filter persistence, and three defect fixes (duplicate push, tag order, export time zone: 5 tickets before, 0 after). Availability Confidence was committed for 4.2 but is not in the release notes, so it did not ship.
+- Support: 12 of 15 handlers filed routing tickets. Old-topic tickets are also piling up (0 of 38 open before, 30 of 44 now), and 27 of 107 after-tickets reuse a pre-4.2 subject, so "other" tickets are not a clean signal.
+- Open: "yes" answer times, push delivery logs, real scores, and any data after 6 Sep (today is 20 Oct). Decision reading in `00-rook/4-2-impact-analysis.md`: no whole-release rollback, test the 90s wait on part of the traffic, check or reset the four's scores.
+- Superseded: the Module 3 chat claim that the four silent responders are "most of the damage" is now about one third; the wider miss spike is about two thirds.
+- Full detail: 03-rewind/session-notes.md (2026-10-20).

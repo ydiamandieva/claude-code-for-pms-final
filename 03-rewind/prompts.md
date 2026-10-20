@@ -52,3 +52,15 @@ this is interesting, the hero has a home-base but also gets pings in different a
 
 ### 13.
 add the nobody took it flow, and then make this ping blast map a shareable artifact
+
+### 14.
+Me for now.
+
+### 15.
+I am still not confident what happened, I trust the data and feedback from users.
+
+### 16.
+this file is in scope too.
+
+### 17.
+Please cover every change from 4.2 release.
