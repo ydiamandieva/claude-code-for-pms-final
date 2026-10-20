@@ -191,3 +191,10 @@ may fill some of this in.
 - Method that paid off: ask what the code does not do (no recovery, no miss-versus-no split, no answer-time or score log, no alert on silence, no handling of one-name lists, no check of how the two 4.2 changes interact).
 - Superseded: "Four responders are effectively locked out" (draft leadership message in `00-rook/4-2-impact-analysis.md`) is too strong. They are still asked about once a day and fail 19 of 20.
 - Full detail: 04-x-ray-vision/session-notes.md (2026-10-20, second part).
+
+- Interviews vs tickets (Module 2, 20 Oct): interviews lead with "offers vanish" (3 of 4) and handler alerts (3 of 4); tickets lead with "phone quiet" (32 vs 13 vanished). No quiet or vanished ticket exists before 12 Aug, so Kip's "always lumpy" and Ambrose's "not the first time" read as an old problem but the record says new. Only Ambrose is in both piles.
+- Interviews can't see the overloaded end (The Gale) and tickets can't either: nobody files about too much work. Handler alerts (2 of 4 interviews, 0 tickets) and dark mode (4 of 147 tickets) are loud in talk, small in tickets.
+- Ticket groups (147): quiet 32, vanished 13, filters 16, other console 31, Supply and gear 26, account and admin 15, dark mode/badge text/alert sound 8, phone glitches 6 (all before 4.2, none after). 12 handlers filed tickets, not 15. Maintenance tickets after 4.2 (marathon-day booking, late reminders) disagree with Halloran's "scheduling improved".
+- Open: why the four stay quiet (answer times, push logs, real scores from engineering), whether handlers really need a live-callout alert, and the Ambrose date mismatch (ticket 13 Aug "yesterday", interview 2 Sep "two weeks ago").
+- Superseded: the Module 1 "Filter persistence: 12 tickets, 2 are thank-yous" is now 16 related tickets (14 after 4.2, 2 before), same 2 thank-yous; still small next to routing.
+- Full detail: 02-super-hearing/session-notes.md (2026-10-20).
