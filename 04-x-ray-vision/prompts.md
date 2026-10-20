@@ -32,3 +32,18 @@ tell me what wrap up does?
 
 ### 6.
 If the class is running this prompt it feels like some information that is otherwise in chats are getting lost, how could we update this skill to also preserve some of the rich learnings we're getting ?
+
+### 7.
+Find me the part of this code that takes points off somebody when they miss a ping or turn one down. Show it to me and explain it in plain English. Then find me every single thing in this code that puts points back on.
+
+### 8.
+Somebody has been quiet for a month. Walk me through, step by step, exactly what would have to happen for them to start getting work again.
+
+### 9.
+So, if a hero is at 0 will they ever be able to recover?
+
+### 10.
+but if they are at 0, how would they even get a request?
+
+### 11.
+If I'd only asked what the code does, not what it doesn't do, what would I have missed?

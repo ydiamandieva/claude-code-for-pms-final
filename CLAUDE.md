@@ -184,3 +184,10 @@ may fill some of this in.
 - Open: "yes" answer times, push delivery logs, real scores, and any data after 6 Sep (today is 20 Oct). Decision reading in `00-rook/4-2-impact-analysis.md`: no whole-release rollback, test the 90s wait on part of the traffic, check or reset the four's scores.
 - Superseded: the Module 3 chat claim that the four silent responders are "most of the damage" is now about one third; the wider miss spike is about two thirds.
 - Full detail: 03-rewind/session-notes.md (2026-10-20).
+
+- Score mechanics (Module 4, second part): one thing in the code adds points (a yes, +0.08) and one takes them off (any non-yes, -0.12), both in `history.py`. There is no decay, reset or bonus, so a month of silence changes nothing. From 0, about 7 yeses in a row reach neutral and 11 to 12 match a typical peer.
+- Between 19 Aug and 6 Sep the four were still pinged about once a day (20 pings, 16 of them first choice, 11 in their home area), but 15 were missed, 4 turned down and 1 taken. A bad score costs at most about 17 to 19 minutes of travel, so a close responder can still rank first. The blocker is answering when asked, not being asked.
+- My score replay has The Undertow near 0 on 5 Sep yet first pick that day: either proximity won or real scores differ. Staff engineer to confirm, and whether a handler override counts as a yes and whether scores survive a restart.
+- Method that paid off: ask what the code does not do (no recovery, no miss-versus-no split, no answer-time or score log, no alert on silence, no handling of one-name lists, no check of how the two 4.2 changes interact).
+- Superseded: "Four responders are effectively locked out" (draft leadership message in `00-rook/4-2-impact-analysis.md`) is too strong. They are still asked about once a day and fail 19 of 20.
+- Full detail: 04-x-ray-vision/session-notes.md (2026-10-20, second part).
