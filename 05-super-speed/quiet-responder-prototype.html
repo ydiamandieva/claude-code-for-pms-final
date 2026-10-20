@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Quiet responder prototype</title>
+<style>
+  :root {
+    --bg: #f4f5f7; --panel: #fff; --ink: #1c2230; --muted: #667085; --line: #e3e6ec;
+    --brand: #26345c; --amber-bg: #fff4dc; --amber-ink: #8a5a00; --amber-line: #f0d28a;
+    --green-bg: #e3f5ea; --green-ink: #17663a; --red-bg: #fde8e6; --red-ink: #a1291f;
+    --grey-bg: #eceef3; --grey-ink: #475066;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font: 15px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 20px 16px 48px; }
+  .sample { font-size: 12px; color: var(--muted); margin-bottom: 12px; }
+  .tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+  .tab { border: 1px solid var(--line); background: var(--panel); border-radius: 999px;
+         padding: 8px 16px; cursor: pointer; font: inherit; color: var(--ink); }
+  .tab[aria-selected="true"] { background: var(--brand); color: #fff; border-color: var(--brand); }
+
+  .console { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  .topbar { background: var(--brand); color: #fff; padding: 12px 18px; display: flex;
+            justify-content: space-between; align-items: center; }
+  .topbar b { font-size: 16px; }
+  .topbar span { font-size: 13px; opacity: .85; }
+  .banner { display: flex; align-items: center; gap: 12px; background: var(--amber-bg);
+            border-bottom: 1px solid var(--amber-line); color: var(--amber-ink); padding: 10px 18px; }
+  .banner button { margin-left: auto; }
+  .body { padding: 18px; }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted);
+       margin: 0 0 10px; font-weight: 600; }
+
+  .row { display: grid; grid-template-columns: 1.3fr 1.2fr 1fr 1.4fr auto; gap: 12px;
+         align-items: center; padding: 14px; border: 1px solid var(--line); border-radius: 10px;
+         margin-bottom: 10px; }
+  .row.quiet { border-color: var(--amber-line); background: #fffdf6; }
+  .name { font-weight: 600; }
+  .sub { font-size: 12.5px; color: var(--muted); }
+  .chip { display: inline-block; font-size: 12px; font-weight: 600; padding: 2px 9px; border-radius: 999px; }
+  .chip.amber { background: var(--amber-bg); color: var(--amber-ink); }
+  .chip.green { background: var(--green-bg); color: var(--green-ink); }
+  .chip.grey { background: var(--grey-bg); color: var(--grey-ink); }
+  .chip.red { background: var(--red-bg); color: var(--red-ink); }
+  .pills { display: flex; gap: 4px; flex-wrap: wrap; }
+
+  button.btn { font: inherit; border-radius: 8px; padding: 7px 14px; cursor: pointer;
+               border: 1px solid var(--brand); background: var(--brand); color: #fff; }
+  button.btn.ghost { background: #fff; color: var(--brand); }
+  button.btn:disabled { opacity: .4; cursor: not-allowed; }
+  button.link { background: none; border: 0; color: var(--brand); cursor: pointer; font: inherit;
+                text-decoration: underline; padding: 0; }
+  .banner button.btn { background: var(--amber-ink); border-color: var(--amber-ink); }
+
+  .log { margin-top: 22px; }
+  .log-item { padding: 10px 14px; border: 1px solid var(--line); border-radius: 8px; font-size: 14px;
+              background: #fafbfc; margin-bottom: 6px; }
+  .empty { color: var(--muted); font-size: 14px; padding: 6px 2px; }
+
+  .overlay { position: fixed; inset: 0; background: rgba(20,24,36,.45); display: flex;
+             align-items: center; justify-content: center; padding: 16px; }
+  .modal { background: #fff; border-radius: 12px; max-width: 460px; width: 100%; padding: 22px; }
+  .modal h3 { margin: 0 0 6px; font-size: 18px; }
+  .facts { background: var(--bg); border-radius: 8px; padding: 10px 12px; margin: 12px 0; font-size: 14px; }
+  .facts div { display: flex; justify-content: space-between; padding: 2px 0; }
+  .check { display: flex; gap: 8px; align-items: flex-start; margin: 14px 0; font-size: 14px; }
+  .actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 8px; }
+  .fine { font-size: 12.5px; color: var(--muted); }
+
+  .stage { display: flex; justify-content: center; padding: 8px 0; }
+  .phone { width: 320px; background: #11141d; border-radius: 36px; padding: 12px; }
+  .screen { background: #fff; border-radius: 26px; min-height: 560px; overflow: hidden; }
+  .phone-top { background: var(--brand); color: #fff; padding: 18px 16px 12px; }
+  .phone-top b { display: block; font-size: 16px; }
+  .phone-top span { font-size: 12px; opacity: .85; }
+  .phone-body { padding: 14px; }
+  .card { border-radius: 12px; padding: 14px; margin-bottom: 12px; }
+  .card.amber { background: var(--amber-bg); color: #5c3d00; }
+  .card.green { background: var(--green-bg); color: #0f4a29; }
+  .card b { display: block; font-size: 16px; margin-bottom: 4px; }
+  .offer { display: flex; justify-content: space-between; align-items: center; padding: 10px 0;
+           border-bottom: 1px solid var(--line); font-size: 14px; }
+  .offer:last-child { border-bottom: 0; }
+
+  .notes { margin-top: 22px; font-size: 13px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 12px; }
+  .notes p { margin: 4px 0; }
+  .hint { text-align: center; font-size: 13px; color: var(--muted); margin-top: 10px; }
+
+  @media (max-width: 720px) {
+    .row { grid-template-columns: 1fr; gap: 6px; }
+    .topbar { flex-direction: column; align-items: flex-start; gap: 2px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="sample">Prototype of the quiet-responder brief. Sample data: see the note at the bottom for what is real and what is a placeholder.</div>
+
+  <div class="tabs" role="tablist">
+    <button class="tab" id="tab-console" role="tab" aria-selected="true">Kip's console</button>
+    <button class="tab" id="tab-phone" role="tab" aria-selected="false">Meteor Mite's phone</button>
+  </div>
+
+  <div id="view"></div>
+
+  <div class="notes">
+    <p><b>Real (database, to 6 Sep):</b> Meteor Mite's pings fell from about 1.6 a day (about 11 a week) to about 0.5 a day (about 4 a week), with 57% missed. The Gale's rose to about 2.7 a day. They share Eastgate, and Kip handles both.</p>
+    <p><b>Placeholder:</b> "last yes", the last three outcomes, the Quiet trigger, and the banner. The brief leaves open how a handler is told (badge, digest or push) and the window. The banner here is a stand-in. Nothing on this page changes any real score.</p>
+    <p><button class="link" id="reset">Reset the demo</button></p>
+  </div>
+</div>
+
+<script>
+  var state = { tab: "console", modal: false, confirmed: false, checkedIn: false, log: [] };
+
+  function pill(label, kind) { return '<span class="chip ' + kind + '">' + label + '</span>'; }
+
+  function consoleView() {
+    var mite = state.checkedIn
+      ? pill("Checked in just now", "green")
+      : pill("Quiet", "amber");
+    var banner = state.checkedIn ? "" :
+      '<div class="banner"><span><b>1 responder in Eastgate has gone quiet.</b> Their pings have halved.</span>' +
+      '<button class="btn" id="open-banner">Review</button></div>';
+    var miteNote = state.checkedIn
+      ? '<div class="sub">Watching: back near the usual rate within 2 weeks?</div>'
+      : '<div class="sub">Pings halved. Usual 11 a week.</div>';
+    var action = state.checkedIn
+      ? '<span class="sub">Done</span>'
+      : '<button class="btn" id="open-row">Check in</button>';
+    var log = state.log.length
+      ? state.log.map(function (l) { return '<div class="log-item">' + l + '</div>'; }).join("")
+      : '<div class="empty">Nothing yet today.</div>';
+
+    return '' +
+      '<div class="console">' +
+        '<div class="topbar"><b>Rook Dispatch &middot; Console</b><span>Signed in as Kip &middot; Eastgate</span></div>' +
+        banner +
+        '<div class="body">' +
+          '<h2>Your responders</h2>' +
+          '<div class="row' + (state.checkedIn ? '' : ' quiet') + '">' +
+            '<div><div class="name">Meteor Mite</div><div class="sub">Eastgate</div></div>' +
+            '<div>' + mite + miteNote + '</div>' +
+            '<div><div class="name">4 this week</div><div class="sub">Last yes: 6 days ago</div></div>' +
+            '<div class="pills">' + pill("Missed", "red") + pill("Missed", "red") + pill("Turned down", "grey") + '</div>' +
+            '<div>' + action + '</div>' +
+          '</div>' +
+          '<div class="row">' +
+            '<div><div class="name">The Gale</div><div class="sub">Eastgate</div></div>' +
+            '<div>' + pill("Normal", "green") + '</div>' +
+            '<div><div class="name">19 this week</div><div class="sub">Last yes: 2 hours ago</div></div>' +
+            '<div class="pills">' + pill("Taken", "green") + pill("Taken", "green") + pill("Turned down", "grey") + '</div>' +
+            '<div></div>' +
+          '</div>' +
+          '<div class="log"><h2>Routing override log</h2>' + log + '</div>' +
+        '</div>' +
+      '</div>' + modalView();
+  }
+
+  function modalView() {
+    if (!state.modal) return "";
+    return '' +
+      '<div class="overlay" id="overlay"><div class="modal" role="dialog" aria-modal="true">' +
+        '<h3>Check in with Meteor Mite</h3>' +
+        '<div class="fine">Call or message them first. This only resets their standing once you have.</div>' +
+        '<div class="facts">' +
+          '<div><span>Pings, last 7 days</span><b>4 (usual 11)</b></div>' +
+          '<div><span>Last yes</span><b>6 days ago</b></div>' +
+          '<div><span>Last three</span><b>Missed, missed, turned down</b></div>' +
+        '</div>' +
+        '<label class="check"><input type="checkbox" id="confirm-box"' + (state.confirmed ? ' checked' : '') + '>' +
+          '<span>I have confirmed that Meteor Mite is available.</span></label>' +
+        '<div class="fine">Resets their standing to neutral and adds a line to the override log. It does not put them ahead of anyone better placed.</div>' +
+        '<div class="actions">' +
+          '<button class="btn ghost" id="cancel">Cancel</button>' +
+          '<button class="btn" id="do-checkin"' + (state.confirmed ? '' : ' disabled') + '>Check in</button>' +
+        '</div>' +
+      '</div></div>';
+  }
+
+  function phoneView() {
+    var card = state.checkedIn
+      ? '<div class="card green"><b>Kip checked in with you</b>Your standing is back to neutral. Offers still go to whoever is best placed for each callout.</div>'
+      : '<div class="card amber"><b>You have had fewer offers lately</b>You are still on the list. Missed offers now count for less than before, and your standing recovers over time.</div>';
+    return '' +
+      '<div class="stage"><div class="phone"><div class="screen">' +
+        '<div class="phone-top"><b>Rook Responder</b><span>Meteor Mite &middot; Available</span></div>' +
+        '<div class="phone-body">' + card +
+          '<h2>Your last three offers</h2>' +
+          '<div class="offer"><span>Yesterday, 18:40</span>' + pill("Missed", "red") + '</div>' +
+          '<div class="offer"><span>3 days ago, 07:15</span>' + pill("Missed", "red") + '</div>' +
+          '<div class="offer"><span>6 days ago, 21:02</span>' + pill("Turned down", "grey") + '</div>' +
+        '</div>' +
+      '</div></div></div>' +
+      '<div class="hint">' + (state.checkedIn ? 'This is what the phone shows after Kip checks in.' :
+        'Go back to Kip\'s console and check in to see this change.') + '</div>';
+  }
+
+  function render() {
+    document.getElementById("tab-console").setAttribute("aria-selected", state.tab === "console");
+    document.getElementById("tab-phone").setAttribute("aria-selected", state.tab === "phone");
+    document.getElementById("view").innerHTML = state.tab === "console" ? consoleView() : phoneView();
+  }
+
+  function openModal() { state.modal = true; state.confirmed = false; render(); }
+
+  document.addEventListener("click", function (e) {
+    var id = e.target.id;
+    if (id === "tab-console") { state.tab = "console"; render(); }
+    else if (id === "tab-phone") { state.tab = "phone"; render(); }
+    else if (id === "open-row" || id === "open-banner") { openModal(); }
+    else if (id === "cancel" || id === "overlay") { state.modal = false; render(); }
+    else if (id === "do-checkin") {
+      var t = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      state.checkedIn = true; state.modal = false;
+      state.log.unshift(t + " &middot; Kip &middot; Check in &middot; Meteor Mite &middot; standing reset to neutral");
+      render();
+    }
+    else if (id === "reset") { state = { tab: "console", modal: false, confirmed: false, checkedIn: false, log: [] }; render(); }
+  });
+
+  document.addEventListener("change", function (e) {
+    if (e.target.id === "confirm-box") {
+      state.confirmed = e.target.checked;
+      document.getElementById("do-checkin").disabled = !state.confirmed;
+    }
+  });
+
+  render();
+</script>
+</body>
+</html>

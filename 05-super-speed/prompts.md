@@ -16,6 +16,24 @@ prompt library built from your own questions.
 
 ### 1.
 
+The note says this shouldn't just be a setting we quietly flip. Using Kip and Meteor Mite, walk me through what he'd actually see change, next time she goes quiet.
+
 ### 2.
 
+Add both points to the brief.
+
 ### 3.
+
+Rework the brief to one pager.
+
+### 4.
+
+Give me one-line pitch for the feature, the sentence you'd say to the person it happens to, not the sentence you'd say in a planning meeting.
+
+### 5.
+
+Take the brief you just wrote and build me a working prototype, an actual screen I can click through, not a description of one. Build it as a single file I can just open in my browser. Show me where this would actually happen, and make at least one thing on it respond when I click it.
+
+### 6.
+
+If I'd only described this, not asked Claude to build it, what would I still not know?
