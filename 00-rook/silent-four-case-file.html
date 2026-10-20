@@ -1,0 +1,710 @@
+<title>The Silent Four</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bangers&family=Barlow:wght@400;500;700&family=Barlow+Condensed:wght@600;700&display=swap">
+<style>
+/* Layout concept: a comic-book case file. Hard-edged panels with offset shadows, action-line hero, then one interactive replay, evidence panels, a villain list and a mission checklist. One committed night-city look. */
+:root {
+  --ink: #080c26;
+  --panel: #111847;
+  --panel-2: #1b2566;
+  --edge: #02030f;
+  --paper: #fff6d6;
+  --mute: #aeb6ee;
+  --red: #f2263f;
+  --yellow: #ffd60a;
+  --cyan: #22d3ff;
+  --magenta: #ff3d9a;
+  --good: #3de08a;
+  --font-display: 'Bangers', Impact, 'Arial Narrow', sans-serif;
+  --font-body: 'Barlow', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-label: 'Barlow Condensed', 'Arial Narrow', system-ui, sans-serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  background-color: var(--ink);
+  background-image: radial-gradient(circle, rgba(255, 214, 10, 0.07) 1.5px, transparent 1.7px);
+  background-size: 16px 16px;
+  color: var(--paper);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0 56px;
+}
+.wrap { max-width: 1060px; margin: 0 auto; display: flex; flex-direction: column; gap: 56px; }
+h1, h2, h3 { font-family: var(--font-display); font-weight: 400; letter-spacing: 0.03em; margin: 0; text-wrap: balance; }
+h2 { font-size: clamp(34px, 6vw, 52px); color: var(--yellow); text-shadow: 3px 3px 0 var(--red), 5px 5px 0 var(--edge); line-height: 1.05; }
+h3 { font-size: 26px; color: var(--paper); }
+p { margin: 0; max-width: 68ch; }
+button { font: inherit; color: inherit; cursor: pointer; }
+:focus-visible { outline: 3px solid var(--cyan); outline-offset: 2px; }
+.label { font-family: var(--font-label); font-weight: 700; text-transform: uppercase; letter-spacing: 0.12em; font-size: 13px; color: var(--mute); }
+.section-head { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+.section-head p { color: var(--mute); font-size: 17px; }
+
+/* hero */
+.hero {
+  margin: 0 calc(-1 * max(16px, env(safe-area-inset-left, 0px)));
+  padding-inline: max(16px, env(safe-area-inset-left, 0px));
+  padding-block: 56px 72px;
+  background:
+    linear-gradient(180deg, rgba(8,12,38,0) 55%, var(--ink) 100%),
+    repeating-conic-gradient(from 0deg at 78% 42%, #f2263f 0 6deg, #b3132b 6deg 12deg);
+  border-bottom: 6px solid var(--yellow);
+  clip-path: polygon(0 0, 100% 0, 100% 92%, 0 100%);
+}
+.hero-in { max-width: 1060px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px; }
+.hero h1 {
+  font-size: clamp(64px, 15vw, 150px);
+  line-height: 0.92;
+  color: var(--yellow);
+  -webkit-text-stroke: 3px var(--edge);
+  paint-order: stroke fill;
+  text-shadow: 6px 6px 0 var(--edge), 10px 10px 0 rgba(2, 3, 15, 0.45);
+  transform: rotate(-2deg);
+  transform-origin: left center;
+  animation: slam 0.5s cubic-bezier(.2, 1.4, .4, 1) both;
+}
+@keyframes slam { from { transform: rotate(-2deg) scale(1.25); } to { transform: rotate(-2deg) scale(1); } }
+.hero .kicker { align-self: flex-start; background: var(--edge); color: var(--yellow); padding: 6px 12px; transform: rotate(-1deg); border: 2px solid var(--yellow); }
+.hero .lede { font-size: clamp(18px, 2.6vw, 22px); font-weight: 500; max-width: 56ch; background: rgba(2, 3, 15, 0.78); padding: 14px 16px; border-left: 6px solid var(--cyan); }
+.cta { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 6px; }
+.btn {
+  font-family: var(--font-display); letter-spacing: 0.05em; font-size: 22px;
+  background: var(--yellow); color: var(--edge); border: 3px solid var(--edge); padding: 8px 18px 6px;
+  box-shadow: 5px 5px 0 var(--edge); transition: transform .1s, box-shadow .1s;
+}
+.btn:hover { transform: translate(-2px, -2px); box-shadow: 7px 7px 0 var(--edge); }
+.btn:active { transform: translate(3px, 3px); box-shadow: 2px 2px 0 var(--edge); }
+.btn.alt { background: var(--cyan); }
+.btn.hot { background: var(--paper); }
+
+/* panels */
+.panel { background: var(--panel); border: 3px solid var(--edge); box-shadow: 7px 7px 0 var(--yellow); padding: 20px; min-width: 0; }
+.panel.red { box-shadow: 7px 7px 0 var(--red); }
+.panel.cyan { box-shadow: 7px 7px 0 var(--cyan); }
+.panel.mag { box-shadow: 7px 7px 0 var(--magenta); }
+
+/* verdict + stats */
+.verdicts { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; }
+.verdict { display: flex; flex-direction: column; gap: 8px; }
+.badge { align-self: flex-start; font-family: var(--font-display); font-size: 24px; letter-spacing: 0.05em; padding: 2px 12px 0; border: 3px solid var(--edge); transform: rotate(-2deg); }
+.badge.yes { background: var(--good); color: var(--edge); }
+.badge.no { background: var(--red); color: var(--paper); }
+.badge.warn { background: var(--yellow); color: var(--edge); }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
+.stat { background: var(--panel-2); border: 3px solid var(--edge); padding: 16px; display: flex; flex-direction: column; gap: 4px; box-shadow: 5px 5px 0 var(--edge); }
+.stat .big { font-family: var(--font-display); font-size: clamp(40px, 7vw, 56px); line-height: 1; color: var(--yellow); letter-spacing: 0.02em; }
+.stat:nth-child(2) .big { color: var(--red); }
+.stat:nth-child(3) .big { color: var(--magenta); }
+.stat:nth-child(4) .big { color: var(--cyan); }
+.stat p { color: var(--mute); font-size: 15px; }
+
+/* replay */
+.controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px 24px; margin: 14px 0 18px; }
+.ctl { display: flex; flex-direction: column; gap: 4px; }
+.ctl .row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.ctl output { font-family: var(--font-display); font-size: 26px; color: var(--yellow); letter-spacing: 0.04em; }
+input[type=range] { width: 100%; accent-color: var(--yellow); height: 28px; }
+.presets { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.chip {
+  font-family: var(--font-label); font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; font-size: 15px;
+  background: var(--panel-2); border: 3px solid var(--edge); padding: 7px 14px; box-shadow: 3px 3px 0 var(--edge);
+}
+.chip[aria-pressed="true"] { background: var(--yellow); color: var(--edge); }
+.chip:hover { border-color: var(--yellow); }
+select { font: inherit; background: var(--panel-2); color: var(--paper); border: 3px solid var(--edge); padding: 6px 10px; }
+.chartbox { overflow-x: auto; background: var(--edge); border: 3px solid var(--edge); outline: 2px solid var(--panel-2); }
+.chartbox svg { display: block; width: 100%; min-width: 560px; height: auto; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 12px; font-family: var(--font-label); font-weight: 600; font-size: 16px; letter-spacing: 0.04em; }
+.legend span { display: inline-flex; align-items: center; gap: 8px; }
+.legend i { width: 26px; height: 6px; display: inline-block; border: 1px solid var(--edge); }
+.readout { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; margin-top: 18px; }
+.readout div { background: var(--panel-2); border: 3px solid var(--edge); padding: 12px 14px; }
+.readout b { display: block; font-family: var(--font-display); font-weight: 400; font-size: 34px; line-height: 1.05; color: var(--yellow); letter-spacing: 0.03em; }
+.readout b.bad { color: var(--red); }
+.readout b.ok { color: var(--good); }
+.readout span { color: var(--mute); font-size: 14px; }
+.board { margin-top: 22px; display: flex; flex-direction: column; gap: 6px; }
+.board-row { display: grid; grid-template-columns: minmax(104px, 150px) 1fr 44px; gap: 10px; align-items: center; font-size: 15px; }
+.board-row .nm { overflow-wrap: anywhere; }
+.bar { height: 16px; background: var(--edge); border: 2px solid var(--edge); position: relative; }
+.bar > i { position: absolute; inset: 0 auto 0 0; background: var(--cyan); }
+.bar.low > i { background: var(--red); }
+.board-row .v { font-variant-numeric: tabular-nums; text-align: right; color: var(--mute); }
+.tag4 { color: var(--yellow); font-family: var(--font-label); font-weight: 700; font-size: 12px; letter-spacing: 0.1em; margin-left: 6px; }
+.note { margin-top: 14px; font-size: 14px; color: var(--mute); max-width: 80ch; }
+
+/* accordion */
+details { background: var(--panel); border: 3px solid var(--edge); box-shadow: 5px 5px 0 var(--edge); }
+details + details { margin-top: 16px; }
+summary { list-style: none; cursor: pointer; padding: 14px 16px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+summary::-webkit-details-marker { display: none; }
+summary::after { content: '+'; margin-left: auto; font-family: var(--font-display); font-size: 30px; color: var(--yellow); line-height: 1; }
+details[open] > summary::after { content: '–'; }
+details[open] > summary { border-bottom: 3px solid var(--edge); background: var(--panel-2); }
+.dbody { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.dbody p { color: var(--paper); }
+.dbody .k { color: var(--yellow); font-family: var(--font-label); font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; font-size: 13px; display: block; margin-bottom: 2px; }
+.sum-title { font-family: var(--font-display); font-size: 26px; letter-spacing: 0.04em; }
+.sev { font-family: var(--font-label); font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; font-size: 13px; padding: 2px 8px; border: 2px solid var(--edge); }
+.sev.critical { background: var(--red); color: var(--paper); }
+.sev.high { background: var(--magenta); color: var(--edge); }
+.sev.medium { background: var(--yellow); color: var(--edge); }
+.sev.process { background: var(--cyan); color: var(--edge); }
+code, .file { font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace; font-size: 0.88em; background: var(--edge); padding: 1px 6px; color: var(--cyan); border: 1px solid var(--panel-2); }
+
+/* evidence charts */
+.evgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; }
+.ev { display: flex; flex-direction: column; gap: 12px; }
+.stack { display: flex; height: 38px; border: 3px solid var(--edge); }
+.stack > div { display: flex; align-items: center; justify-content: center; font-family: var(--font-display); font-size: 20px; color: var(--edge); letter-spacing: 0.03em; min-width: 0; overflow: hidden; }
+.s-taken { background: var(--good); }
+.s-down { background: var(--yellow); }
+.s-miss { background: var(--red); color: var(--paper) !important; }
+.stack-label { display: flex; justify-content: space-between; font-family: var(--font-label); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; font-size: 13px; color: var(--mute); }
+.cols { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; align-items: end; height: 170px; }
+.col { display: flex; flex-direction: column; justify-content: flex-end; align-items: center; height: 100%; gap: 4px; font-size: 13px; color: var(--mute); }
+.col .b { width: 100%; background: var(--red); border: 2px solid var(--edge); min-height: 2px; }
+.col.zero .b { background: var(--panel-2); }
+.col .n { font-family: var(--font-display); font-size: 20px; color: var(--paper); line-height: 1; }
+.col .d { font-family: var(--font-label); font-weight: 600; }
+.col.after .d { color: var(--yellow); }
+.hbars { display: flex; flex-direction: column; gap: 10px; }
+.hb { display: grid; grid-template-columns: minmax(96px, 140px) 1fr; gap: 10px; align-items: center; font-size: 14px; }
+.hb .tracks { display: flex; flex-direction: column; gap: 4px; }
+.hb .tr { height: 20px; background: var(--edge); position: relative; border: 2px solid var(--edge); }
+.hb .tr i { position: absolute; inset: 0 auto 0 0; display: flex; align-items: center; padding-left: 8px; font-family: var(--font-display); font-size: 16px; color: var(--edge); white-space: nowrap; }
+.hb .tr.b i { background: var(--cyan); }
+.hb .tr.a i { background: var(--yellow); }
+.hb .tr.a.bad i { background: var(--red); color: var(--paper); }
+.key { display: flex; gap: 14px; flex-wrap: wrap; font-family: var(--font-label); font-weight: 600; font-size: 14px; letter-spacing: 0.04em; color: var(--mute); }
+.key i { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--edge); margin-right: 6px; vertical-align: -2px; }
+.ev p { color: var(--mute); font-size: 15px; }
+
+/* mission */
+.progress { height: 22px; background: var(--edge); border: 3px solid var(--edge); position: relative; margin: 6px 0 16px; }
+.progress i { position: absolute; inset: 0 auto 0 0; background: repeating-linear-gradient(135deg, var(--yellow) 0 12px, #e5bd00 12px 24px); transition: width .25s; }
+.task { display: grid; grid-template-columns: 30px 1fr; gap: 12px; padding: 14px 0; border-top: 2px dashed var(--panel-2); }
+.task:first-of-type { border-top: 0; }
+.task input { width: 24px; height: 24px; accent-color: var(--yellow); margin: 2px 0 0; }
+.task label { cursor: pointer; display: flex; flex-direction: column; gap: 4px; }
+.task .t { font-weight: 700; font-size: 18px; }
+.task input:checked + label .t { text-decoration: line-through; color: var(--mute); }
+.task .meta { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.task .why { color: var(--mute); font-size: 15px; }
+.effort { font-family: var(--font-label); font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; font-size: 12px; padding: 1px 8px; background: var(--cyan); color: var(--edge); border: 2px solid var(--edge); }
+.effort.decision { background: var(--magenta); }
+.test { margin-top: 18px; background: var(--panel-2); border: 3px solid var(--edge); border-left: 8px solid var(--good); padding: 14px 16px; }
+textarea { width: 100%; min-height: 220px; background: var(--edge); color: var(--paper); border: 3px solid var(--panel-2); font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 13px; padding: 12px; resize: vertical; }
+.copied { color: var(--good); font-family: var(--font-label); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; min-height: 1.4em; }
+
+.limits ul { margin: 10px 0 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; max-width: 78ch; }
+footer { color: var(--mute); font-size: 14px; border-top: 3px solid var(--yellow); padding-top: 16px; max-width: 90ch; }
+
+@media (max-width: 520px) {
+  .panel { padding: 14px; box-shadow: 5px 5px 0 var(--yellow); }
+  .panel.red { box-shadow: 5px 5px 0 var(--red); }
+  .panel.cyan { box-shadow: 5px 5px 0 var(--cyan); }
+  .panel.mag { box-shadow: 5px 5px 0 var(--magenta); }
+  .hero h1 { -webkit-text-stroke-width: 2px; }
+  .board-row { grid-template-columns: 96px 1fr 38px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .hero h1 { animation: none; }
+  .btn, .progress i { transition: none; }
+}
+</style>
+
+<div class="wrap">
+
+<header class="hero">
+  <div class="hero-in">
+    <span class="label kicker">Rook Dispatch · Release 4.2 · Case file</span>
+    <h1>The Silent Four</h1>
+    <p class="lede">Four responders went almost quiet after 12 August. This file shows who, how the scoring rules let it happen, and what to tell a developer so a missed call can never push a hero out of the rotation.</p>
+    <div class="cta">
+      <button class="btn" data-go="replay">Run the replay</button>
+      <button class="btn alt" data-go="villains">Meet the villains</button>
+      <button class="btn hot" data-go="mission">See the mission</button>
+    </div>
+  </div>
+</header>
+
+<section id="verdict" aria-label="Verdict">
+  <div class="section-head"><span class="label">Case verdict</span><h2>What happened</h2></div>
+  <div class="verdicts">
+    <div class="panel verdict"><span class="badge yes">Yes</span><h3>Built as asked?</h3><p>Both one-line briefs were built to the letter. Proximity weight went 0.45 to 0.60, acceptance 0.40 to 0.25, and the wait went from 90 to 60 seconds.</p></div>
+    <div class="panel red verdict"><span class="badge no">Not visible</span><h3>Did it deliver the goal?</h3><p>Proximity should make a home responder the first ping more often. In the 11 unaffected areas that share fell from 80% to 72%.</p></div>
+    <div class="panel mag verdict"><span class="badge warn">Weaker</span><h3>Is the timeout the cause?</h3><p>Every refusal came in under 40 seconds, so a 60 second wait looks long enough. Delivery of the push may matter more. Answer times would settle it.</p></div>
+  </div>
+</section>
+
+<section aria-label="Key numbers">
+  <div class="stats">
+    <div class="stat"><span class="big">0.00</span><span class="label">Replay score of each of the four by early September</span><p>Nobody else drops below 0.28.</p></div>
+    <div class="stat"><span class="big">2.3% → 18%</span><span class="label">Pings missed</span><p>Before and after 12 Aug. Refusals stayed flat.</p></div>
+    <div class="stat"><span class="big">5.5% → 11.1%</span><span class="label">Callouts nobody took</span><p>48 of 879 before, 49 of 440 after.</p></div>
+    <div class="stat"><span class="big">40 s</span><span class="label">Slowest "no" ever recorded</span><p>184 refusals before and 84 after, none slower.</p></div>
+  </div>
+</section>
+
+<section id="replay" aria-label="Score replay">
+  <div class="section-head">
+    <span class="label">Interactive</span>
+    <h2>Replay the score</h2>
+    <p>Each line is one responder's recent-acceptance score, rebuilt from their actual ping outcomes (yes, no, miss) and plotted from 30 pings before 4.2 to the end of the data. Change the rules and watch the four.</p>
+  </div>
+  <div class="panel">
+    <div class="presets" role="group" aria-label="Rule presets">
+      <span class="label">Rules</span>
+      <button class="chip" data-preset="shipped" aria-pressed="true">As shipped in 4.2</button>
+      <button class="chip" data-preset="free" aria-pressed="false">Misses are free</button>
+      <button class="chip" data-preset="floor" aria-pressed="false">Raise the floor</button>
+      <button class="chip" data-preset="both" aria-pressed="false">Light miss + floor</button>
+    </div>
+    <div class="controls">
+      <div class="ctl"><div class="row"><label for="c-credit" class="label">Reward for a yes</label><output id="o-credit"></output></div><input type="range" id="c-credit" min="0" max="0.2" step="0.01" value="0.08"></div>
+      <div class="ctl"><div class="row"><label for="c-down" class="label">Penalty for a no</label><output id="o-down"></output></div><input type="range" id="c-down" min="0" max="0.3" step="0.01" value="0.12"></div>
+      <div class="ctl"><div class="row"><label for="c-miss" class="label">Penalty for a miss</label><output id="o-miss"></output></div><input type="range" id="c-miss" min="0" max="0.3" step="0.01" value="0.12"></div>
+      <div class="ctl"><div class="row"><label for="c-floor" class="label">Lowest score allowed</label><output id="o-floor"></output></div><input type="range" id="c-floor" min="0" max="0.5" step="0.05" value="0"></div>
+    </div>
+    <div class="presets" style="margin-bottom:14px">
+      <label for="pick" class="label">Also highlight</label>
+      <select id="pick"></select>
+    </div>
+    <div class="chartbox"><svg id="chart" viewBox="0 0 900 400" role="img" aria-label="Replayed acceptance score for all 16 responders, with the four silent ones highlighted"></svg></div>
+    <div class="legend" id="legend"></div>
+    <div class="readout">
+      <div><b id="r-pinned">–</b><span>of the four pinned at the lowest allowed score by the end</span></div>
+      <div><b id="r-lowest">–</b><span id="r-lowest-s">lowest final score</span></div>
+      <div><b id="r-handicap">–</b><span>most travel time a bad score can cost against a perfect one</span></div>
+      <div><b id="r-cliff">–</b><span>failure rate where a responder starts sliding for good (all refusals / all misses)</span></div>
+    </div>
+    <div class="board" id="board" aria-label="Final scores"></div>
+    <p class="note">Estimate. Real scores are not in the database, so each replay starts at 0.5 on 29 June and applies the rules to every ping. Before 4.2 the weight on this score was 0.40, worth up to 40 minutes of travel. Now it is 0.25, worth up to 19.</p>
+  </div>
+</section>
+
+<section id="asked" aria-label="Built as asked">
+  <div class="section-head"><span class="label">Spec vs reality</span><h2>Built as asked?</h2></div>
+  <details open>
+    <summary><span class="sum-title">Ping wait: 90 to 60 seconds</span><span class="sev medium">Built exactly</span></summary>
+    <div class="dbody">
+      <p><span class="k">The ask</span>Wiki brief: "Tune how long a ping waits for an answer before it moves on." No target, no reason, no check on what it does to scores.</p>
+      <p><span class="k">What shipped</span>In the data, a missed ping moves on after 91 to 93 seconds before 12 Aug and 61 to 63 seconds after. The setting does what it says.</p>
+      <p><span class="k">The catch</span>The glossary says a miss lowers a responder's place in the order. Nobody connected a shorter wait to more misses to lower scores.</p>
+    </div>
+  </details>
+  <details>
+    <summary><span class="sum-title">Proximity weighted up</span><span class="sev medium">Built exactly</span></summary>
+    <div class="dbody">
+      <p><span class="k">The ask</span>Wiki brief: "Weight proximity more heavily when ranking who gets pinged." Release notes say responders who cover wide areas asked for it.</p>
+      <p><span class="k">What shipped</span>0.45 to 0.60 on proximity, 0.40 to 0.25 on recent acceptance.</p>
+      <p><span class="k">Open question</span>On 14 Aug the engineering manager asked whether this was meant to apply to responders who turn jobs down. The staff engineer was away until the 24th and Priya left on the 21st. It was never answered, so the answer is "whatever the code does".</p>
+    </div>
+  </details>
+  <details>
+    <summary><span class="sum-title">Did wide-area responders gain?</span><span class="sev high">Not visible</span></summary>
+    <div class="dbody">
+      <p><span class="k">Test</span>If proximity counts for more, the home responder should be the first ping more often.</p>
+      <p><span class="k">Result</span>In the 11 areas without a silent responder, the home share of first pings fell from 80% to 72%. In the four affected areas it fell from 81% to 41%. I can't see ranking scores, so I can't isolate the proximity change. What the data shows is the opposite of the hoped-for effect.</p>
+    </div>
+  </details>
+</section>
+
+<section id="evidence" aria-label="Evidence">
+  <div class="section-head"><span class="label">Evidence</span><h2>The numbers behind it</h2></div>
+  <div class="evgrid">
+    <div class="panel red ev">
+      <h3>Where pings went</h3>
+      <div class="stack-label"><span>Before 4.2 · 1,085 pings</span></div>
+      <div class="stack"><div class="s-taken" style="width:76.6%">76.6%</div><div class="s-down" style="width:21.1%">21%</div><div class="s-miss" style="width:2.3%"></div></div>
+      <div class="stack-label"><span>After 4.2 · 611 pings</span></div>
+      <div class="stack"><div class="s-taken" style="width:64%">64.0%</div><div class="s-down" style="width:18%">18%</div><div class="s-miss" style="width:18%">18%</div></div>
+      <div class="key"><span><i style="background:var(--good)"></i>Taken</span><span><i style="background:var(--yellow)"></i>Turned down</span><span><i style="background:var(--red)"></i>Missed</span></div>
+      <p>The whole loss went into "missed". Turning down barely moved.</p>
+    </div>
+    <div class="panel cyan ev">
+      <h3>Misses by day around release</h3>
+      <div class="cols" id="cols" role="img" aria-label="Missed pings per day from 9 to 15 August"></div>
+      <p>Missed pings out of all pings that day. The jump is on release day, not a slow slide.</p>
+    </div>
+    <div class="panel mag ev">
+      <h3>Home responder asked first</h3>
+      <div class="hbars">
+        <div class="hb"><span>11 other areas</span><div class="tracks"><div class="tr b"><i style="width:80%">80%</i></div><div class="tr a"><i style="width:72%">72%</i></div></div></div>
+        <div class="hb"><span>The 4 areas</span><div class="tracks"><div class="tr b"><i style="width:81%">81%</i></div><div class="tr a bad"><i style="width:41%">41%</i></div></div></div>
+      </div>
+      <div class="key"><span><i style="background:var(--cyan)"></i>Before 4.2</span><span><i style="background:var(--yellow)"></i>After 4.2</span></div>
+      <p>Share of callouts where the first ping went to the responder who normally covers that area.</p>
+    </div>
+    <div class="panel ev">
+      <h3>The four, before and after</h3>
+      <div class="hbars" id="four-fail"></div>
+      <div class="key"><span><i style="background:var(--cyan)"></i>Before 4.2</span><span><i style="background:var(--red)"></i>After 4.2</span></div>
+      <p>Share of pings that were refused or missed. Even their first six pings after release failed 3 to 5 times out of 6, while their scores were still high. The score loop can explain why they got fewer pings. It does not explain why they missed so many.</p>
+    </div>
+  </div>
+</section>
+
+<section id="villains" aria-label="Bugs and design flaws">
+  <div class="section-head">
+    <span class="label">Bugs and design flaws</span>
+    <h2>The villains</h2>
+    <p>Most of these work as designed. The design is what hurts. Open one for the file, the evidence and the fix.</p>
+  </div>
+  <div class="presets" id="sevfilter" role="group" aria-label="Filter by severity" style="margin-bottom:18px"></div>
+  <div id="villain-list"></div>
+</section>
+
+<section id="mission" aria-label="Developer brief">
+  <div class="section-head">
+    <span class="label">Brief for the developer</span>
+    <h2>The mission</h2>
+    <p>Goal: a missed call can never remove someone from the rotation, and silence must be visible and recoverable. Tick items off as you agree them.</p>
+  </div>
+  <div class="panel cyan">
+    <div class="label" id="prog-label">0 of 8 agreed</div>
+    <div class="progress" role="progressbar" aria-labelledby="prog-label" aria-valuemin="0" aria-valuemax="8" aria-valuenow="0" id="prog"><i id="prog-bar" style="width:0%"></i></div>
+    <div id="tasks"></div>
+    <div class="test">
+      <span class="label">How to know it worked</span>
+      <p>Replay the last 70 days of pings through the new rules. No responder should end up with a fraction of their peers' pings, and callouts nobody took should return to about 5%. If the availability record gets a new field, tell the Supply team first.</p>
+    </div>
+    <div class="cta" style="margin-top:18px">
+      <button class="btn" id="copy">Copy brief</button>
+      <button class="btn alt" id="reset">Clear ticks</button>
+    </div>
+    <div class="copied" id="copied" role="status"></div>
+    <details id="brief-wrap" style="margin-top:8px"><summary><span class="label">Plain-text brief</span></summary><div class="dbody"><textarea id="brief" readonly aria-label="Plain-text developer brief"></textarea></div></details>
+  </div>
+</section>
+
+<section class="limits" aria-label="Limits">
+  <div class="panel red">
+    <h3>What I could not see</h3>
+    <ul>
+      <li>Real score history per responder. The replay is an estimate that starts everyone at 0.5.</li>
+      <li>How long people take to say yes. The cascade ends when someone accepts, so only refusals and misses leave a timing trail.</li>
+      <li>The working code for availability, travel time and phone push. Those functions are blank placeholders in the routing folder.</li>
+      <li>Who was available on callouts where only one responder was pinged.</li>
+      <li>Prior-year numbers and anything after 6 September.</li>
+    </ul>
+  </div>
+</section>
+
+<footer>
+  Sources: Rook database (pings, callouts, responders, support tickets, 29 Jun to 6 Sep 2026), Rook wiki (4.2 release page, Q3 roadmap briefs, glossary), and the routing code in <span class="file">00-rook/code/dispatch-routing</span>. Rook Industries is a fictional teaching scenario.
+</footer>
+
+</div>
+
+<script>
+(function () {
+  // Ping outcomes per responder, oldest first. T = taken, D = turned down, M = missed.
+  // Each entry: [before 12 Aug, from 12 Aug]
+  var DATA = {
+    "Captain Vantage": ["TTDTTDTTTTTTTTTTDTMTTTTDTTTTDTDDTTDTTTDDTTTMDTTTTTTTTTDTDTTDDTTTTTTTTDTDTDTT", "DMDTTTTTDTTTMTMDTTTTTTDTTTTMTTTDTTDTTTTTDTTDTTTTMTTDTTTDMTT"],
+    "Cindermark": ["TTDDTTTTTTTTTTTTDTTTTTDMTTTTTDTTDTTDTTTTTTDTDTTTTTDTTTTDT", "DTDTTMTTTTTTTMTDDTTTDTTDTTMMTTTTDDTTTTTTMT"],
+    "Corporal Ashgrove": ["TTTTDDTTTTTTTDDTTTTTTTTTMDTTTTDTDDTTTTTTDTTTTTTTDTTTTTDDTTTTTTD", "TTDMDTTTDTTMDTTMTTTTDTMDTTTTT"],
+    "Farlight": ["TDTDDTTTTTTTTTDTTTDDTTTTTMTTTTDDTTTTTTTMTTDTDTTTTDTTTTTDTDTTDTTTTTTDTMTDTTD", "TMDMMMTMDMM"],
+    "Halfmoon": ["TTTDTTTTTDDTTDTTTDDTTTTTTTDDDTTTTTTDDDTTDTTTTTTTTTTDTTDDTDTTTTTTDTTTD", "DMTTTMDTTDMTTTDTMTTTDTDTMTTTDTTTT"],
+    "Ironvale": ["DTTTTTTDTDTDDTTTTTDTTTTTTTDDTTTTTTDTTMTTTTTTTTDTDTT", "TDMTDTTTTMDMDTTTTTTMDTTTMTTTTTTTTTTMMTD"],
+    "Meteor Mite": ["TDTTTDDDTTTTTTTTTDTDTTDTDTDTTTTDDTTMDTTTDDTTTTTTMTTDTTTDTTDTDTDTTTTDTT", "DMMMTTMDTMMDMM"],
+    "Nightwell": ["TTMTTTTDTTTDTDTTTDDTTDTDTTTTTMTTTTDTTTTTTDTTTTDTTTTTTTDTMDTTTTTDTTDTTDDTTTTTDTTDTTTTTTTTDTTTTDT", "TTTDDTMMDDTMTDTTTTTDTTTTTTMTTTTTTTTDTDDDTTTMTTMTDTDTMTTDDTTTDTTTTTTTTM"],
+    "Sgt. Bulwark": ["TDTTTTTDTTTTTDTDTTTDTDTTTTTTTDTTTDTTTDTDTDTTTTTTTTTTDDDTT", "MTTDMDTTTDTTTTTMTDTDMTTMTTTTMTDTTTMTTTT"],
+    "Sgt. Falkirk": ["TTTTTTTMTTTMTTTTDTTTTTDDDTTTTTTDTTDTTTTTTTTDTTDTTTTTTDTDTTTTDTT", "DTTMTMTTTTDTTTDTMTTTMDTMTTTTTTTDMTTTTTTTTDTTTMTDTTDM"],
+    "Stormwrack": ["TTTTTTDTTTDDTTTTTDDTTTTTTTTTTTTDDTDTTTDDTTTTTTTTTTTTTTTDTDDTTTTTTDTTTTTTDTTTDTTTTD", "TTTMMMDTTDDTTDTTTTTTMMTTTTTTTDTMTMDTTTDTTTTTTTMTTTTTDTTTTTTTTDM"],
+    "The Drift": ["TTTTDTDTTTTTTDTTTTTTTDTTTTTTTTDMTTTTTTT", "MTDMTTTTMTTDTTTTTDMTTTMTTDDT"],
+    "The Gale": ["TTTTDTTTTTMDTTDTDTDTTTTTTTTTDTDTTTTTDTDTDTTTTMTTTTTTTTTTTTTTTTMDTTDTTTTDDTTTTTTTMT", "MMTTTDTDTDTTTDTTTTDMDTTTTMTTTMMTTDTTTDTTTTTDDTTTDDTTTMTTTMTTTTTTTTTDT"],
+    "The Longcast": ["DTDTTTTTMTTTTDTTTTTTDTDTTTTTDTTDTTTDTDTDTTTTT", "TTDTDMTTTMTDTTMMDTTTDTTMTTTTTTDT"],
+    "The Undertow": ["TTDTTDDTTTTTTDTTTTTDTTTTMTTTTTDDTTTDDTTTTTTTTTDTTTTTTTTTDDTTTDTTDTDTTTTTTTD", "MMTTMMMDDTMMMM"],
+    "Vesper": ["TDTTTTTTTTDTTDTMTTTTTDTTDTTTTTTTTTDTTMTTTTDDTTTTTTTTTDTTTTTTTTMTTTTTDTTTTTTTTDTTTDTTDT", "MTMTDTMMTTMMDMDMM"]
+  };
+  var FOUR = ["Farlight", "The Undertow", "Vesper", "Meteor Mite"];
+  var COLORS = { "Farlight": "#ffd60a", "The Undertow": "#22d3ff", "Vesper": "#ff3d9a", "Meteor Mite": "#b88cff" };
+  var NAMES = Object.keys(DATA).sort();
+  var XMIN = -30, XMAX = 72;
+
+  var PRESETS = {
+    shipped: { credit: 0.08, down: 0.12, miss: 0.12, floor: 0 },
+    free:    { credit: 0.08, down: 0.12, miss: 0,    floor: 0 },
+    floor:   { credit: 0.08, down: 0.12, miss: 0.12, floor: 0.35 },
+    both:    { credit: 0.08, down: 0.12, miss: 0.02, floor: 0.3 }
+  };
+
+  var $ = function (id) { return document.getElementById(id); };
+  var fmt = function (n) { return n.toFixed(2); };
+
+  function params() {
+    return {
+      credit: parseFloat($("c-credit").value),
+      down: parseFloat($("c-down").value),
+      miss: parseFloat($("c-miss").value),
+      floor: parseFloat($("c-floor").value)
+    };
+  }
+
+  function replay(name, p) {
+    var before = DATA[name][0], seq = before + DATA[name][1];
+    var s = 0.5, out = [];
+    for (var i = 0; i < seq.length; i++) {
+      var c = seq.charAt(i);
+      s += c === "T" ? p.credit : (c === "D" ? -p.down : -p.miss);
+      s = Math.max(p.floor, Math.min(1, s));
+      out.push({ x: i - before.length + 1, y: s });
+    }
+    return out;
+  }
+
+  function render() {
+    var p = params();
+    $("o-credit").textContent = "+" + fmt(p.credit);
+    $("o-down").textContent = "−" + fmt(p.down);
+    $("o-miss").textContent = "−" + fmt(p.miss);
+    $("o-floor").textContent = fmt(p.floor);
+
+    var W = 900, H = 400, ML = 56, MR = 18, MT = 34, MB = 42;
+    var pw = W - ML - MR, ph = H - MT - MB;
+    var px = function (x) { return ML + (x - XMIN) / (XMAX - XMIN) * pw; };
+    var py = function (y) { return MT + (1 - y) * ph; };
+    var pick = $("pick").value;
+    var svg = "";
+
+    for (var g = 0; g <= 4; g++) {
+      var gy = g / 4;
+      svg += '<line x1="' + ML + '" x2="' + (W - MR) + '" y1="' + py(gy) + '" y2="' + py(gy) + '" stroke="#1b2566" stroke-width="1"/>';
+      svg += '<text x="' + (ML - 10) + '" y="' + (py(gy) + 7) + '" text-anchor="end" font-size="20" fill="#aeb6ee" font-family="Barlow Condensed, sans-serif">' + gy.toFixed(2) + '</text>';
+    }
+    for (var t = XMIN; t <= XMAX; t += 10) {
+      if (t % 10 !== 0) continue;
+      svg += '<text x="' + px(t) + '" y="' + (H - 14) + '" text-anchor="middle" font-size="20" fill="#aeb6ee" font-family="Barlow Condensed, sans-serif">' + (t > 0 ? "+" + t : t) + '</text>';
+    }
+    svg += '<text x="' + (ML + pw / 2) + '" y="' + (H - 0) + '" text-anchor="middle" font-size="16" fill="#aeb6ee" font-family="Barlow Condensed, sans-serif" letter-spacing="1.5">PINGS BEFORE / AFTER 12 AUG</text>';
+    if (p.floor > 0) {
+      svg += '<line x1="' + ML + '" x2="' + (W - MR) + '" y1="' + py(p.floor) + '" y2="' + py(p.floor) + '" stroke="#3de08a" stroke-width="2" stroke-dasharray="8 6"/>';
+      svg += '<text x="' + (W - MR - 4) + '" y="' + (py(p.floor) - 8) + '" text-anchor="end" font-size="18" fill="#3de08a" font-family="Barlow Condensed, sans-serif" letter-spacing="1">FLOOR</text>';
+    }
+    svg += '<line x1="' + px(0) + '" x2="' + px(0) + '" y1="' + (MT - 6) + '" y2="' + (H - MB) + '" stroke="#f2263f" stroke-width="4"/>';
+    svg += '<text x="' + (px(0) + 8) + '" y="' + (MT - 12) + '" font-size="22" fill="#f2263f" font-family="Bangers, Impact, sans-serif" letter-spacing="1.5">4.2 SHIPS</text>';
+
+    var finals = {};
+    function path(name) {
+      var pts = replay(name, p), d = "", started = false;
+      for (var i = 0; i < pts.length; i++) {
+        if (pts[i].x < XMIN) continue;
+        d += (started ? "L" : "M") + px(pts[i].x).toFixed(1) + " " + py(pts[i].y).toFixed(1) + " ";
+        started = true;
+      }
+      finals[name] = pts[pts.length - 1].y;
+      return d;
+    }
+    NAMES.forEach(function (n) {
+      var d = path(n);
+      if (FOUR.indexOf(n) === -1 && n !== pick) {
+        svg += '<path d="' + d + '" fill="none" stroke="#6d78c9" stroke-opacity="0.45" stroke-width="2" stroke-linejoin="round"/>';
+      }
+    });
+    if (pick && FOUR.indexOf(pick) === -1) {
+      svg += '<path d="' + path(pick) + '" fill="none" stroke="#ffffff" stroke-width="4" stroke-linejoin="round"/>';
+    }
+    FOUR.forEach(function (n) {
+      svg += '<path d="' + path(n) + '" fill="none" stroke="' + COLORS[n] + '" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>';
+    });
+    $("chart").innerHTML = svg;
+
+    // legend
+    var lg = "";
+    FOUR.forEach(function (n) { lg += '<span><i style="background:' + COLORS[n] + '"></i>' + n + '</span>'; });
+    if (pick && FOUR.indexOf(pick) === -1) lg += '<span><i style="background:#fff"></i>' + pick + '</span>';
+    lg += '<span><i style="background:#6d78c9"></i>Everyone else</span>';
+    $("legend").innerHTML = lg;
+
+    // readout
+    var pinned = FOUR.filter(function (n) { return finals[n] <= p.floor + 0.005 && finals[n] < 0.5; }).length;
+    var pe = $("r-pinned");
+    pe.textContent = pinned + " of 4";
+    pe.className = pinned > 0 ? "bad" : "ok";
+    var low = NAMES.slice().sort(function (a, b) { return finals[a] - finals[b]; })[0];
+    $("r-lowest").textContent = fmt(finals[low]);
+    $("r-lowest").className = finals[low] < 0.1 ? "bad" : "ok";
+    $("r-lowest-s").textContent = "lowest final score (" + low + ")";
+    var hand = 0.25 * (1 - finals[low]) / 0.60 * 45;
+    $("r-handicap").textContent = hand.toFixed(1) + " min";
+    var cd = p.credit + p.down, cm = p.credit + p.miss;
+    $("r-cliff").textContent = (cd > 0 ? Math.round(p.credit / cd * 100) + "%" : "–") + " / " + (cm > 0 ? Math.round(p.credit / cm * 100) + "%" : "never");
+
+    // scoreboard
+    var sorted = NAMES.slice().sort(function (a, b) { return finals[a] - finals[b]; });
+    var bh = "";
+    sorted.forEach(function (n) {
+      var v = finals[n];
+      bh += '<div class="board-row"><span class="nm">' + n + (FOUR.indexOf(n) > -1 ? '<span class="tag4">THE FOUR</span>' : '') + '</span>' +
+        '<div class="bar' + (v < 0.1 ? ' low' : '') + '"><i style="width:' + (v * 100).toFixed(0) + '%"></i></div>' +
+        '<span class="v">' + fmt(v) + '</span></div>';
+    });
+    $("board").innerHTML = bh;
+  }
+
+  function markPreset(key) {
+    document.querySelectorAll("[data-preset]").forEach(function (b) {
+      b.setAttribute("aria-pressed", String(b.getAttribute("data-preset") === key));
+    });
+  }
+
+  function setPreset(key) {
+    var v = PRESETS[key];
+    $("c-credit").value = v.credit; $("c-down").value = v.down; $("c-miss").value = v.miss; $("c-floor").value = v.floor;
+    markPreset(key);
+    render();
+  }
+
+  // controls
+  var opts = '<option value="">None</option>';
+  NAMES.forEach(function (n) { if (FOUR.indexOf(n) === -1) opts += '<option value="' + n + '">' + n + '</option>'; });
+  $("pick").innerHTML = opts;
+  $("pick").addEventListener("change", render);
+  ["c-credit", "c-down", "c-miss", "c-floor"].forEach(function (id) {
+    $(id).addEventListener("input", function () {
+      var p = params(), match = null;
+      Object.keys(PRESETS).forEach(function (k) {
+        var v = PRESETS[k];
+        if (v.credit === p.credit && v.down === p.down && v.miss === p.miss && v.floor === p.floor) match = k;
+      });
+      markPreset(match);
+      render();
+    });
+  });
+  document.querySelectorAll("[data-preset]").forEach(function (b) {
+    b.addEventListener("click", function () { setPreset(b.getAttribute("data-preset")); });
+  });
+  document.querySelectorAll("[data-go]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      var el = $(b.getAttribute("data-go"));
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  });
+
+  // misses by day
+  var DAYS = [["9 Aug", 0, 16], ["10", 0, 32], ["11", 1, 19], ["12", 7, 25], ["13", 12, 25], ["14", 8, 30], ["15", 6, 24]];
+  var ch = "";
+  DAYS.forEach(function (d, i) {
+    var pct = d[1] / d[2];
+    ch += '<div class="col' + (d[1] === 0 ? ' zero' : '') + (i >= 3 ? ' after' : '') + '"><span class="n">' + d[1] + '</span><div class="b" style="height:' + Math.max(2, pct * 120 / 0.5).toFixed(0) + 'px"></div><span class="d">' + d[0] + '</span><span>of ' + d[2] + '</span></div>';
+  });
+  $("cols").innerHTML = ch;
+
+  // the four, failure rate before vs after
+  var FAIL = [["Farlight", 27, 82], ["The Undertow", 23, 79], ["Vesper", 19, 71], ["Meteor Mite", 31, 79]];
+  var fh = "";
+  FAIL.forEach(function (f) {
+    fh += '<div class="hb"><span>' + f[0] + '</span><div class="tracks"><div class="tr b"><i style="width:' + f[1] + '%">' + f[1] + '%</i></div><div class="tr a bad"><i style="width:' + f[2] + '%">' + f[2] + '%</i></div></div></div>';
+  });
+  $("four-fail").innerHTML = fh;
+
+  // villains
+  var VILLAINS = [
+    { sev: "critical", title: "The One-Way Door", file: "history.py", what: "Scores never fade. A responder ranked low is asked rarely, so they rarely get a chance to earn points back. A 2019 comment in the file asks whether scores should drift back to neutral, and leaves it open.", ev: "In the replay all four are pinned at 0 from late August. Tickets from 3 to 5 Sep show Farlight and The Undertow still silent for 6 to 9 days.", fix: "Make the score forget: a rolling window of the last 10 to 20 pings, or a daily drift back toward 0.5." },
+    { sev: "high", title: "The Quiet Verdict", file: "offer.py, history.py", what: "dispatch() calls record_declined() for anything that is not a yes. A missed offer costs the same 0.12 as a refusal. The comment says this is deliberate: \"we asked and we didn't get a yes\".", ev: "The four failed 71 to 82% of pings, mostly misses. Peers failed about 30%.", fix: "Add a separate record_missed(). Make it free, or a small cost after several misses in a row." },
+    { sev: "high", title: "The 40% Cliff", file: "config.py", what: "A yes earns 0.08 and a no costs 0.12, so anyone who fails more than 40% of the time slides to the floor for good.", ev: "Average failure rate rose from about 23% to about 36%. Ordinary responders are now 4 points from the cliff. Only the four are past it.", fix: "Make the penalty no bigger than the reward, or score by share of recent yeses instead of adding and subtracting points." },
+    { sev: "high", title: "The Single-Ping Dead End", file: "availability.py, offer.py", what: "About 1 in 5 failed first pings ended with nobody else asked. The README says everyone available is on the list, so either one person was available or the list is narrower than claimed.", ev: "42 of 236 before, 40 of 183 after. Riverside has 8 untaken callouts and Westbury 8, each asked only the home responder. In several cases other responders had been pinged in the previous hour.", fix: "Log why a list was short. Widen the search when a list has one name. Alert a handler when a callout ends with nobody." },
+    { sev: "medium", title: "The Fake \"Recent\"", file: "history.py", what: "\"Recent acceptance\" is a running total with no memory limit. Before 4.2 it also did no work, because everyone sat near the ceiling.", ev: "Replay: all 16 responders were between 0.80 and 1.00 on 11 Aug. After 4.2 the same signal turned live and harsh.", fix: "Window it, as in The One-Way Door, so the name matches the behaviour." },
+    { sev: "medium", title: "The Amnesiac Scoreboard", file: "history.py", what: "Scores sit in a dictionary in memory, keyed by display name. A restart may reset everyone, and two people with the same name would share one score.", ev: "Not visible in the data. It could make the silence look shorter or longer than the code suggests.", fix: "Store scores in the database by responder ID, and log every change with the reason." },
+    { sev: "medium", title: "The Invisible Clock", file: "offer.py", what: "The 60 second clock starts when the offer is handed to the push service, not when it reaches the phone. There is no last check before the offer is withdrawn. Answer time for a yes is never recorded.", ev: "Every refusal arrives within 40 seconds, before and after 4.2, so speed alone may not explain 8 times more misses. The 4.2 defect fix to duplicate push notifications touches the same path.", fix: "Record delivery time and answer time for yes. Poll once more before withdrawing. Put 90 versus 60 seconds behind a switch and test it." },
+    { sev: "process", title: "The Unanswered Question", file: "wiki: 4.2 release page", what: "On 14 Aug the engineering manager asked whether the proximity change was meant to apply to responders who turn jobs down. The staff engineer was away until the 24th and Priya left on the 21st, so nobody answered.", ev: "Priya's note says to look at seasonality first. The break lines up with release day instead.", fix: "Decide, then write the answer into the brief." }
+  ];
+  var SEV_LABEL = { critical: "Critical", high: "High", medium: "Medium", process: "Process" };
+  var activeSev = "all";
+  function renderVillains() {
+    var h = "";
+    VILLAINS.forEach(function (v) {
+      if (activeSev !== "all" && v.sev !== activeSev) return;
+      h += '<details><summary><span class="sum-title">' + v.title + '</span><span class="sev ' + v.sev + '">' + SEV_LABEL[v.sev] + '</span><span class="file">' + v.file + '</span></summary>' +
+        '<div class="dbody"><p><span class="k">What it is</span>' + v.what + '</p><p><span class="k">Evidence</span>' + v.ev + '</p><p><span class="k">Fix</span>' + v.fix + '</p></div></details>';
+    });
+    $("villain-list").innerHTML = h || "<p>No villains at this level.</p>";
+  }
+  var sf = '<span class="label">Show</span>';
+  [["all", "All"], ["critical", "Critical"], ["high", "High"], ["medium", "Medium"], ["process", "Process"]].forEach(function (s) {
+    sf += '<button class="chip" data-sev="' + s[0] + '" aria-pressed="' + (s[0] === "all") + '">' + s[1] + '</button>';
+  });
+  $("sevfilter").innerHTML = sf;
+  $("sevfilter").addEventListener("click", function (e) {
+    var b = e.target.closest("[data-sev]");
+    if (!b) return;
+    activeSev = b.getAttribute("data-sev");
+    document.querySelectorAll("[data-sev]").forEach(function (x) { x.setAttribute("aria-pressed", String(x === b)); });
+    renderVillains();
+  });
+  renderVillains();
+
+  // mission
+  var TASKS = [
+    { t: "Count a miss differently from a refusal", f: "offer.py, history.py", e: "Small", w: "Free, or a small cost only after several misses in a row." },
+    { t: "Raise the lowest allowed score to 0.3 to 0.4", f: "config.py", e: "Config", w: "One number. A bad score can then only nudge ranking, never bury someone." },
+    { t: "Make \"recent\" mean recent", f: "history.py", e: "Medium", w: "Use the last 10 to 20 pings, or drift scores back toward 0.5 over days. This closes the 2019 note." },
+    { t: "Add a comeback slot", f: "routing.py", e: "Medium", w: "If an available responder has had no ping for about 3 days, give them the next nearby low-stakes callout." },
+    { t: "Make silence visible", f: "history.py, console", e: "Medium", w: "Store scores by responder ID, log every change, and alert the handler when pings drop by half or a responder goes 5 days unpinged." },
+    { t: "Measure the clock before changing it", f: "offer.py", e: "Small", w: "Record answer time for yes as well as no, log when the offer reaches the phone, poll once more before withdrawing, and put 90 versus 60 seconds behind a switch." },
+    { t: "Stop callouts ending after one ping", f: "routing.py, availability.py, offer.py", e: "Medium", w: "Log why a list was short, widen the search for one-name lists, and alert a handler when nobody takes a callout." },
+    { t: "Decide: does proximity apply to people who turn jobs down?", f: "wiki, config.py", e: "Decision", w: "The engineering manager asked on 14 Aug and it was never answered. Write the answer into the brief." }
+  ];
+  var KEY = "silent-four-mission";
+  var done = {};
+  try { done = JSON.parse(localStorage.getItem(KEY) || "{}") || {}; } catch (e) { done = {}; }
+  function save() { try { localStorage.setItem(KEY, JSON.stringify(done)); } catch (e) {} }
+
+  function briefText() {
+    var s = "Brief: stop heroes silently dropping out of the Dispatch rotation\n";
+    s += "Goal: a missed call can never remove someone from the rotation, and silence must be visible and recoverable.\n\n";
+    TASKS.forEach(function (t, i) {
+      s += (done[i] ? "[x] " : "[ ] ") + (i + 1) + ". " + t.t + " (" + t.f + "; " + t.e + ")\n    " + t.w + "\n";
+    });
+    s += "\nHow to know it worked: replay the last 70 days of pings through the new rules. No responder should end up with a fraction of their peers' pings, and callouts nobody took should return to about 5%.\n";
+    s += "If the availability record gets a new field, tell the Supply team first.\n";
+    return s;
+  }
+  function renderTasks() {
+    var h = "", n = 0;
+    TASKS.forEach(function (t, i) {
+      if (done[i]) n++;
+      h += '<div class="task"><input type="checkbox" id="task-' + i + '" data-i="' + i + '"' + (done[i] ? " checked" : "") + '>' +
+        '<label for="task-' + i + '"><span class="t">' + t.t + '</span><span class="meta"><span class="effort' + (t.e === "Decision" ? " decision" : "") + '">' + t.e + '</span><span class="file">' + t.f + '</span></span><span class="why">' + t.w + '</span></label></div>';
+    });
+    $("tasks").innerHTML = h;
+    $("prog-label").textContent = n + " of " + TASKS.length + " agreed";
+    $("prog-bar").style.width = (n / TASKS.length * 100) + "%";
+    $("prog").setAttribute("aria-valuenow", String(n));
+    $("brief").value = briefText();
+  }
+  $("tasks").addEventListener("change", function (e) {
+    var i = e.target.getAttribute("data-i");
+    if (i === null) return;
+    done[i] = e.target.checked;
+    save();
+    renderTasks();
+  });
+  $("reset").addEventListener("click", function () { done = {}; save(); renderTasks(); $("copied").textContent = ""; });
+  $("copy").addEventListener("click", function () {
+    var text = briefText(), out = $("copied");
+    function fallback() {
+      $("brief-wrap").open = true;
+      var ta = $("brief");
+      ta.focus(); ta.select();
+      out.textContent = "Copy blocked here. The text is selected, press Ctrl or Cmd + C.";
+    }
+    try {
+      navigator.clipboard.writeText(text).then(function () { out.textContent = "Brief copied"; }, fallback);
+    } catch (e) { fallback(); }
+  });
+
+  renderTasks();
+  setPreset("shipped");
+})();
+</script>
