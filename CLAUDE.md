@@ -198,3 +198,8 @@ may fill some of this in.
 - Open: why the four stay quiet (answer times, push logs, real scores from engineering), whether handlers really need a live-callout alert, and the Ambrose date mismatch (ticket 13 Aug "yesterday", interview 2 Sep "two weeks ago").
 - Superseded: the Module 1 "Filter persistence: 12 tickets, 2 are thank-yous" is now 16 related tickets (14 after 4.2, 2 before), same 2 thank-yous; still small next to routing.
 - Full detail: 02-super-hearing/session-notes.md (2026-10-20).
+
+- Worries raised at the latest wrap-up (20 Oct): all data ends 6-7 Sep, six weeks stale, so current state is unknown. Q3 ended 30 Sep, so the "which cut features are still Q3 commitments" talk with the Director of Product is now overdue.
+- Everything rests on one database (the CSV matches it exactly). Nobody has checked whether 4.2 changed how a "missed" ping is logged, which could mimic the jump to 28% on release day.
+- Don't reset scores or restore the timeout on the penalty-loop theory alone until real scores are seen. Raise first with the engineering manager: callouts nobody took doubled, one-ping callouts (thin coverage?), and the "missed" definition.
+- Supply safety flag for the Supply team: an 11-day wait on a cracked vest plate (Halloran) and an open vest plate ticket (Nightwell).
