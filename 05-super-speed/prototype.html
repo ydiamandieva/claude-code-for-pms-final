@@ -3,39 +3,44 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Quiet responder prototype</title>
+<title>Quiet responders prototype</title>
 <style>
   :root {
-    --bg: #f4f5f7; --panel: #fff; --ink: #1c2230; --muted: #667085; --line: #e3e6ec;
-    --brand: #26345c; --amber-bg: #fff4dc; --amber-ink: #8a5a00; --amber-line: #f0d28a;
+    --bg: #f4f5f7; --panel: #fff; --ink: #1c2230; --muted: #5b6577; --line: #e3e6ec;
+    --brand: #26345c; --amber-bg: #fff4dc; --amber-ink: #7a4f00; --amber-line: #f0d28a;
     --green-bg: #e3f5ea; --green-ink: #17663a; --red-bg: #fde8e6; --red-ink: #a1291f;
-    --grey-bg: #eceef3; --grey-ink: #475066;
+    --grey-bg: #eceef3; --grey-ink: #475066; --today: #b3261e; --fix: #1a6b3c;
   }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--ink);
          font: 15px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
-  .wrap { max-width: 960px; margin: 0 auto; padding: 20px 16px 48px; }
-  .sample { font-size: 12px; color: var(--muted); margin-bottom: 12px; }
-  .tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+  .wrap { max-width: 1000px; margin: 0 auto; padding: 20px 16px 48px; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  .sample { font-size: 13px; color: var(--muted); margin-bottom: 14px; }
+  .tabs { display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
   .tab { border: 1px solid var(--line); background: var(--panel); border-radius: 999px;
          padding: 8px 16px; cursor: pointer; font: inherit; color: var(--ink); }
   .tab[aria-selected="true"] { background: var(--brand); color: #fff; border-color: var(--brand); }
+  .caption { font-size: 13.5px; color: var(--muted); margin: 0 0 14px; }
 
-  .console { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px; margin-bottom: 14px; }
+  .console { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; margin-bottom: 14px; }
   .topbar { background: var(--brand); color: #fff; padding: 12px 18px; display: flex;
-            justify-content: space-between; align-items: center; }
+            justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
   .topbar b { font-size: 16px; }
-  .topbar span { font-size: 13px; opacity: .85; }
-  .banner { display: flex; align-items: center; gap: 12px; background: var(--amber-bg);
-            border-bottom: 1px solid var(--amber-line); color: var(--amber-ink); padding: 10px 18px; }
-  .banner button { margin-left: auto; }
-  .body { padding: 18px; }
-  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted);
-       margin: 0 0 10px; font-weight: 600; }
+  .topbar span { font-size: 13px; opacity: .9; }
+  .body { padding: 16px 18px; }
+  h2 { font-size: 12.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted);
+       margin: 0 0 10px; font-weight: 700; }
+  h3 { font-size: 15px; margin: 0 0 6px; }
 
-  .row { display: grid; grid-template-columns: 1.3fr 1.2fr 1fr 1.4fr auto; gap: 12px;
-         align-items: center; padding: 14px; border: 1px solid var(--line); border-radius: 10px;
-         margin-bottom: 10px; }
+  .modes { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; align-items: center; }
+  .modes label { border: 1px solid var(--line); background: #fff; border-radius: 8px; padding: 6px 12px; cursor: pointer; font-size: 14px; }
+  .modes input { margin-right: 6px; }
+  .modes label.on { border-color: var(--brand); background: #eef1fa; font-weight: 600; }
+
+  .row { display: grid; grid-template-columns: 1.2fr 1.3fr 1fr 1.4fr auto; gap: 12px;
+         align-items: center; padding: 14px; border: 1px solid var(--line); border-radius: 10px; margin-bottom: 10px; }
   .row.quiet { border-color: var(--amber-line); background: #fffdf6; }
   .name { font-weight: 600; }
   .sub { font-size: 12.5px; color: var(--muted); }
@@ -49,186 +54,455 @@
   button.btn { font: inherit; border-radius: 8px; padding: 7px 14px; cursor: pointer;
                border: 1px solid var(--brand); background: var(--brand); color: #fff; }
   button.btn.ghost { background: #fff; color: var(--brand); }
-  button.btn:disabled { opacity: .4; cursor: not-allowed; }
-  button.link { background: none; border: 0; color: var(--brand); cursor: pointer; font: inherit;
-                text-decoration: underline; padding: 0; }
-  .banner button.btn { background: var(--amber-ink); border-color: var(--amber-ink); }
+  button.btn.yes { background: var(--green-ink); border-color: var(--green-ink); }
+  button.btn.no { background: var(--grey-ink); border-color: var(--grey-ink); }
+  button.btn.miss { background: var(--red-ink); border-color: var(--red-ink); }
+  button.btn:disabled { opacity: .45; cursor: not-allowed; }
+  button.link { background: none; border: 0; color: var(--brand); cursor: pointer; font: inherit; text-decoration: underline; padding: 0; }
 
-  .log { margin-top: 22px; }
-  .log-item { padding: 10px 14px; border: 1px solid var(--line); border-radius: 8px; font-size: 14px;
-              background: #fafbfc; margin-bottom: 6px; }
-  .empty { color: var(--muted); font-size: 14px; padding: 6px 2px; }
+  .alertcard { border: 1px solid var(--amber-line); background: var(--amber-bg); color: #5c3d00;
+               border-radius: 10px; padding: 12px 14px; margin-bottom: 14px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .alertcard.calm { border-color: var(--line); background: #fafbfc; color: var(--muted); }
+  .alertcard .grow { flex: 1; min-width: 200px; }
+  .toast { position: fixed; top: 16px; right: 16px; z-index: 5; max-width: 340px; background: #1c2230; color: #fff;
+           border-radius: 12px; padding: 14px; box-shadow: 0 8px 28px rgba(0,0,0,.25); }
+  .toast .acts { display: flex; gap: 8px; margin-top: 10px; }
+  .toast button.btn.ghost { background: transparent; color: #fff; border-color: #6b7488; }
 
-  .overlay { position: fixed; inset: 0; background: rgba(20,24,36,.45); display: flex;
-             align-items: center; justify-content: center; padding: 16px; }
-  .modal { background: #fff; border-radius: 12px; max-width: 460px; width: 100%; padding: 22px; }
-  .modal h3 { margin: 0 0 6px; font-size: 18px; }
+  .log-item { padding: 9px 12px; border: 1px solid var(--line); border-radius: 8px; font-size: 14px; background: #fafbfc; margin-bottom: 6px; }
+  .empty { color: var(--muted); font-size: 14px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 12.5px; color: var(--muted); font-weight: 700; }
+
+  .overlay { position: fixed; inset: 0; background: rgba(20,24,36,.45); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 10; }
+  .modal { background: #fff; border-radius: 12px; max-width: 470px; width: 100%; padding: 22px; }
+  .modal h3 { font-size: 18px; }
   .facts { background: var(--bg); border-radius: 8px; padding: 10px 12px; margin: 12px 0; font-size: 14px; }
-  .facts div { display: flex; justify-content: space-between; padding: 2px 0; }
+  .facts div { display: flex; justify-content: space-between; gap: 10px; padding: 2px 0; }
   .check { display: flex; gap: 8px; align-items: flex-start; margin: 14px 0; font-size: 14px; }
   .actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 8px; }
   .fine { font-size: 12.5px; color: var(--muted); }
 
   .stage { display: flex; justify-content: center; padding: 8px 0; }
   .phone { width: 320px; background: #11141d; border-radius: 36px; padding: 12px; }
-  .screen { background: #fff; border-radius: 26px; min-height: 560px; overflow: hidden; }
+  .screen { background: #fff; border-radius: 26px; min-height: 540px; overflow: hidden; }
   .phone-top { background: var(--brand); color: #fff; padding: 18px 16px 12px; }
   .phone-top b { display: block; font-size: 16px; }
-  .phone-top span { font-size: 12px; opacity: .85; }
+  .phone-top span { font-size: 12px; opacity: .9; }
   .phone-body { padding: 14px; }
-  .card { border-radius: 12px; padding: 14px; margin-bottom: 12px; }
-  .card.amber { background: var(--amber-bg); color: #5c3d00; }
-  .card.green { background: var(--green-bg); color: #0f4a29; }
-  .card b { display: block; font-size: 16px; margin-bottom: 4px; }
-  .offer { display: flex; justify-content: space-between; align-items: center; padding: 10px 0;
-           border-bottom: 1px solid var(--line); font-size: 14px; }
+  .pcard { border-radius: 12px; padding: 14px; margin-bottom: 12px; }
+  .pcard.amber { background: var(--amber-bg); color: #5c3d00; }
+  .pcard.green { background: var(--green-bg); color: #0f4a29; }
+  .pcard.grey { background: var(--grey-bg); color: var(--ink); }
+  .pcard b { display: block; font-size: 16px; margin-bottom: 4px; }
+  .offer { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
   .offer:last-child { border-bottom: 0; }
 
-  .notes { margin-top: 22px; font-size: 13px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 12px; }
-  .notes p { margin: 4px 0; }
-  .hint { text-align: center; font-size: 13px; color: var(--muted); margin-top: 10px; }
+  .simgrid { display: grid; grid-template-columns: 320px 1fr; gap: 14px; align-items: start; }
+  .ctl { margin-bottom: 14px; }
+  .ctl label { display: block; font-size: 13.5px; margin-bottom: 2px; }
+  .ctl input[type=range] { width: 100%; }
+  .ctl .val { font-weight: 700; }
+  .btnrow { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+  .rankgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+  .rankcard { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font-size: 14px; }
+  .rankcard b { font-size: 20px; display: block; }
+  .legend { display: flex; gap: 16px; font-size: 13px; margin-bottom: 4px; flex-wrap: wrap; }
+  .legend i { display: inline-block; width: 18px; height: 3px; vertical-align: middle; margin-right: 6px; }
+  svg text { font-family: inherit; }
 
-  @media (max-width: 720px) {
+  @media (max-width: 760px) {
     .row { grid-template-columns: 1fr; gap: 6px; }
-    .topbar { flex-direction: column; align-items: flex-start; gap: 2px; }
+    .simgrid { grid-template-columns: 1fr; }
+    .toast { left: 16px; right: 16px; max-width: none; }
   }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <div class="sample">Prototype of the quiet-responder brief. Sample data: see the note at the bottom for what is real and what is a placeholder.</div>
+  <h1>Bringing quiet responders back: working prototype</h1>
+  <div class="sample">Sample data and placeholder numbers. Kip, Meteor Mite and The Gale are the brief's examples. The numbers marked as placeholders are for the staff engineer to set. Nothing here touches a real score.</div>
 
   <div class="tabs" role="tablist">
-    <button class="tab" id="tab-console" role="tab" aria-selected="true">Kip's console</button>
-    <button class="tab" id="tab-phone" role="tab" aria-selected="false">Meteor Mite's phone</button>
+    <button class="tab" role="tab" data-tab="console" id="tab-console">Kip's console</button>
+    <button class="tab" role="tab" data-tab="phone" id="tab-phone">Meteor Mite's phone</button>
+    <button class="tab" role="tab" data-tab="sim" id="tab-sim">Score simulator</button>
   </div>
+  <p class="caption" id="caption"></p>
 
   <div id="view"></div>
+  <div id="modalRoot"></div>
+  <div id="toastRoot"></div>
 
-  <div class="notes">
-    <p><b>Real (database, to 6 Sep):</b> Meteor Mite's pings fell from about 1.6 a day (about 11 a week) to about 0.5 a day (about 4 a week), with 57% missed. The Gale's rose to about 2.7 a day. They share Eastgate, and Kip handles both.</p>
-    <p><b>Placeholder:</b> "last yes", the last three outcomes, the Quiet trigger, and the banner. The brief leaves open how a handler is told (badge, digest or push) and the window. The banner here is a stand-in. Nothing on this page changes any real score.</p>
-    <p><button class="link" id="reset">Reset the demo</button></p>
-  </div>
+  <p class="fine"><button class="link" data-act="reset">Reset the demo</button></p>
 </div>
 
 <script>
-  var state = { tab: "console", modal: false, confirmed: false, checkedIn: false, log: [] };
+(function () {
+  var USUAL = 11;
+  var NEUTRAL = 0.5;
+  var MIN_PER_POINT = 18.75; // 0.25 recent-acceptance weight / 0.60 proximity weight * 45 minute horizon
+  var DEFAULTS = { miss: 0.06, heal: 0.01, pct: 50, thr: 3 };
+  var SEQ = ["miss", "miss", "no", "miss", "yes", "miss", "miss", "no", "miss", "miss", "yes", "miss", "no", "miss"];
 
-  function pill(label, kind) { return '<span class="chip ' + kind + '">' + label + '</span>'; }
+  var S, timer = null;
+  function freshState() {
+    return { tab: "console", mode: "badge", events: [], pings: USUAL, p: { miss: DEFAULTS.miss, heal: DEFAULTS.heal, pct: DEFAULTS.pct, thr: DEFAULTS.thr },
+             modal: false, confirmed: false, log: [], pingsAtCheckin: null, checkedIn: false,
+             pushDismissed: false, prevQuiet: false, playing: false };
+  }
+  S = freshState();
 
-  function consoleView() {
-    var mite = state.checkedIn
-      ? pill("Checked in just now", "green")
-      : pill("Quiet", "amber");
-    var banner = state.checkedIn ? "" :
-      '<div class="banner"><span><b>1 responder in Eastgate has gone quiet.</b> Their pings have halved.</span>' +
-      '<button class="btn" id="open-banner">Review</button></div>';
-    var miteNote = state.checkedIn
-      ? '<div class="sub">Watching: back near the usual rate within 2 weeks?</div>'
-      : '<div class="sub">Pings halved. Usual 11 a week.</div>';
-    var action = state.checkedIn
-      ? '<span class="sub">Done</span>'
-      : '<button class="btn" id="open-row">Check in</button>';
-    var log = state.log.length
-      ? state.log.map(function (l) { return '<div class="log-item">' + l + '</div>'; }).join("")
-      : '<div class="empty">Nothing yet today.</div>';
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+  function r3(v) { return Math.round(v * 1000) / 1000; }
+
+  function simulate() {
+    var p = S.p, today = NEUTRAL, fix = NEUTRAL, day = 0, lastYes = null, offers = [], baseline = 0;
+    var series = [{ label: "", today: today, fix: fix }];
+    S.events.forEach(function (e) {
+      var label = "";
+      if (e.type === "yes") {
+        today = clamp(today + 0.08, 0, 1); fix = clamp(fix + 0.08, 0, 1);
+        offers.push({ o: "yes", day: day }); lastYes = day; label = "Y";
+      } else if (e.type === "no") {
+        today = clamp(today - 0.12, 0, 1); fix = clamp(fix - 0.12, 0, 1);
+        offers.push({ o: "no", day: day }); label = "N";
+      } else if (e.type === "miss") {
+        today = clamp(today - 0.12, 0, 1); fix = clamp(fix - p.miss, 0, 1);
+        offers.push({ o: "miss", day: day }); label = "M";
+      } else if (e.type === "day") {
+        day += e.n;
+        if (fix < NEUTRAL) fix = Math.min(NEUTRAL, fix + p.heal * e.n);
+        label = "+" + e.n + "d";
+      } else if (e.type === "checkin") {
+        fix = NEUTRAL; baseline = offers.length; label = "C";
+      }
+      series.push({ label: label, today: r3(today), fix: r3(fix) });
+    });
+    return { today: r3(today), fix: r3(fix), day: day, lastYes: lastYes, offers: offers, baseline: baseline, series: series };
+  }
+
+  function quietState(sim) {
+    var recent = sim.offers.slice(sim.baseline).slice(-4);
+    var misses = recent.filter(function (o) { return o.o === "miss"; }).length;
+    var byMiss = misses >= S.p.thr;
+    var byVol = S.pings < USUAL * S.p.pct / 100 && (S.pingsAtCheckin === null || S.pings < S.pingsAtCheckin);
+    var why = [];
+    if (byVol) why.push("pings this week " + S.pings + ", usual " + USUAL);
+    if (byMiss) why.push(misses + " of the last " + recent.length + " offers missed");
+    return { quiet: byMiss || byVol, why: why.join(" and ") };
+  }
+
+  function chip(label, kind) { return '<span class="chip ' + kind + '">' + label + '</span>'; }
+  function outcomeChip(o) {
+    if (o === "yes") return chip("Taken", "green");
+    if (o === "no") return chip("Turned down", "grey");
+    return chip("Missed", "red");
+  }
+  function lastThree(sim) { return sim.offers.slice(-3).reverse(); }
+  function lastYesText(sim) {
+    if (sim.lastYes === null) return "none in this demo";
+    var d = sim.day - sim.lastYes;
+    return d === 0 ? "today" : d + (d === 1 ? " day ago" : " days ago");
+  }
+
+  /* ---------- Console tab ---------- */
+  function consoleHTML(sim, q) {
+    var showChecked = S.checkedIn && !q.quiet;
+    var statusChip = "";
+    if (S.mode === "badge") statusChip = q.quiet ? chip("Quiet", "amber") : (showChecked ? chip("Checked in", "green") : chip("Normal", "green"));
+    else statusChip = showChecked ? chip("Checked in", "green") : chip("Normal", "green");
+    var note = q.quiet ? '<div class="sub">' + q.why + '</div>' : (showChecked ? '<div class="sub">Watching: does the miss rate come back down?</div>' : "");
+    var rowAction = (S.mode === "badge" && q.quiet) ? '<button class="btn" data-act="open-checkin">Check in</button>' : "";
+    var outcomes = lastThree(sim);
+    var pills = outcomes.length ? outcomes.map(function (o) { return outcomeChip(o.o); }).join("") : '<span class="sub">no offers yet in this demo</span>';
+
+    var digest = "";
+    if (S.mode === "digest") {
+      digest = q.quiet
+        ? '<div class="alertcard"><div class="grow"><b>Daily digest, 08:00</b><br>1 responder has gone quiet: Meteor Mite (' + q.why + ').</div><button class="btn" data-act="open-checkin">Check in with Meteor Mite</button></div>'
+        : '<div class="alertcard calm"><div class="grow"><b>Daily digest, 08:00</b><br>Nobody has gone quiet.</div></div>';
+    }
+
+    var log = S.log.length ? S.log.map(function (l) { return '<div class="log-item">' + l + '</div>'; }).join("") : '<div class="empty">Nothing yet.</div>';
 
     return '' +
+      '<div class="modes" role="radiogroup" aria-label="How the handler is told">' +
+        '<span class="fine" style="margin-right:6px">How Kip is told:</span>' +
+        modeLabel("badge", "Badge on the list") + modeLabel("digest", "Daily digest") + modeLabel("push", "Push alert") +
+      '</div>' +
       '<div class="console">' +
         '<div class="topbar"><b>Rook Dispatch &middot; Console</b><span>Signed in as Kip &middot; Eastgate</span></div>' +
-        banner +
-        '<div class="body">' +
+        '<div class="body">' + digest +
           '<h2>Your responders</h2>' +
-          '<div class="row' + (state.checkedIn ? '' : ' quiet') + '">' +
+          '<div class="row' + (q.quiet && S.mode === "badge" ? " quiet" : "") + '">' +
             '<div><div class="name">Meteor Mite</div><div class="sub">Eastgate</div></div>' +
-            '<div>' + mite + miteNote + '</div>' +
-            '<div><div class="name">4 this week</div><div class="sub">Last yes: 6 days ago</div></div>' +
-            '<div class="pills">' + pill("Missed", "red") + pill("Missed", "red") + pill("Turned down", "grey") + '</div>' +
-            '<div>' + action + '</div>' +
+            '<div>' + statusChip + note + '</div>' +
+            '<div><div class="name">' + S.pings + ' this week</div><div class="sub">Usual ' + USUAL + ' &middot; last yes: ' + lastYesText(sim) + '</div></div>' +
+            '<div class="pills">' + pills + '</div>' +
+            '<div>' + rowAction + '</div>' +
           '</div>' +
           '<div class="row">' +
             '<div><div class="name">The Gale</div><div class="sub">Eastgate</div></div>' +
-            '<div>' + pill("Normal", "green") + '</div>' +
-            '<div><div class="name">19 this week</div><div class="sub">Last yes: 2 hours ago</div></div>' +
-            '<div class="pills">' + pill("Taken", "green") + pill("Taken", "green") + pill("Turned down", "grey") + '</div>' +
+            '<div>' + chip("Normal", "green") + '</div>' +
+            '<div><div class="name">19 this week</div><div class="sub">Usual 13 &middot; last yes: 2 hours ago</div></div>' +
+            '<div class="pills">' + chip("Taken", "green") + chip("Taken", "green") + chip("Turned down", "grey") + '</div>' +
             '<div></div>' +
           '</div>' +
-          '<div class="log"><h2>Routing override log</h2>' + log + '</div>' +
+          '<h2 style="margin-top:20px">Routing override log</h2>' + log +
         '</div>' +
-      '</div>' + modalView();
+      '</div>' +
+      '<div class="card"><h2>The three measures (sample values, to 6 Sep)</h2>' +
+        '<table><tr><th>Measure</th><th>Today</th><th>Target</th></tr>' +
+        '<tr><td>Handler notices a quiet responder</td><td>About 3 days, from a ticket</td><td>Same working day</td></tr>' +
+        '<tr><td>Offers missed per quiet responder, over a fixed 2 weeks</td><td>The four: 58.9% (2.9% before 4.2)</td><td>Back toward their own pre-4.2 rate</td></tr>' +
+        '<tr><td>"Phone quiet" tickets about Farlight and The Undertow</td><td>22 in 27 days</td><td>Fewer per 27 days</td></tr></table>' +
+        '<p class="fine" style="margin:8px 0 0">Numbers for the last two get set after two weeks of data, against each responder\'s own rate before 4.2.</p></div>';
+  }
+  function modeLabel(v, text) {
+    return '<label class="' + (S.mode === v ? "on" : "") + '"><input type="radio" name="mode" value="' + v + '"' + (S.mode === v ? " checked" : "") + '>' + text + '</label>';
   }
 
-  function modalView() {
-    if (!state.modal) return "";
-    return '' +
-      '<div class="overlay" id="overlay"><div class="modal" role="dialog" aria-modal="true">' +
-        '<h3>Check in with Meteor Mite</h3>' +
-        '<div class="fine">Call or message them first. This only resets their standing once you have.</div>' +
-        '<div class="facts">' +
-          '<div><span>Pings, last 7 days</span><b>4 (usual 11)</b></div>' +
-          '<div><span>Last yes</span><b>6 days ago</b></div>' +
-          '<div><span>Last three</span><b>Missed, missed, turned down</b></div>' +
+  /* ---------- Phone tab ---------- */
+  function phoneHTML(sim, q) {
+    var card;
+    if (S.checkedIn && !q.quiet) card = '<div class="pcard green"><b>Kip checked in with you</b>Your standing is back to neutral. Offers still go to whoever is best placed for each callout.</div>';
+    else if (q.quiet) card = '<div class="pcard amber"><b>You\'ve had fewer offers lately</b>You\'re still on the list. Missed offers now count for less than a refusal, and your standing recovers over time.</div>';
+    else card = '<div class="pcard grey"><b>You\'re on the list</b>Nothing to flag right now.</div>';
+    var offers = lastThree(sim);
+    var list = offers.length ? offers.map(function (o) {
+      return '<div class="offer"><span>Day ' + o.day + '</span>' + outcomeChip(o.o) + '</div>';
+    }).join("") : '<div class="empty">No offers yet in this demo.</div>';
+    return '<div class="stage"><div class="phone"><div class="screen">' +
+      '<div class="phone-top"><b>Rook Responder</b><span>Meteor Mite &middot; Available</span></div>' +
+      '<div class="phone-body">' + card + '<h2>Your last three offers</h2>' + list + '</div></div></div></div>';
+  }
+
+  /* ---------- Simulator tab ---------- */
+  function simStatic() {
+    return '<div class="simgrid">' +
+      '<div class="card">' +
+        '<h2>Meteor Mite gets an offer</h2>' +
+        '<div class="btnrow">' +
+          '<button class="btn yes" data-act="ev" data-t="yes">Yes</button>' +
+          '<button class="btn no" data-act="ev" data-t="no">No</button>' +
+          '<button class="btn miss" data-act="ev" data-t="miss">Miss</button>' +
         '</div>' +
-        '<label class="check"><input type="checkbox" id="confirm-box"' + (state.confirmed ? ' checked' : '') + '>' +
-          '<span>I have confirmed that Meteor Mite is available.</span></label>' +
-        '<div class="fine">Resets their standing to neutral and adds a line to the override log. It does not put them ahead of anyone better placed.</div>' +
-        '<div class="actions">' +
-          '<button class="btn ghost" id="cancel">Cancel</button>' +
-          '<button class="btn" id="do-checkin"' + (state.confirmed ? '' : ' disabled') + '>Check in</button>' +
+        '<div class="btnrow">' +
+          '<button class="btn ghost" data-act="day" data-n="1">Skip a day</button>' +
+          '<button class="btn ghost" data-act="day" data-n="7">Skip 7 days</button>' +
         '</div>' +
+        '<div class="btnrow">' +
+          '<button class="btn ghost" data-act="replay" id="replayBtn">Replay Meteor Mite\'s pattern</button>' +
+          '<button class="btn ghost" data-act="open-checkin">Check in as Kip</button>' +
+        '</div>' +
+        '<div class="ctl"><label for="s-pings">Pings this week: <span class="val" id="v-pings"></span> (usual ' + USUAL + ')</label><input type="range" id="s-pings" min="0" max="20" step="1" value="' + S.pings + '"></div>' +
+        '<h2 style="margin-top:18px">Placeholders for the staff engineer</h2>' +
+        '<div class="ctl"><label for="s-miss">Cost of a miss, with the fixes: <span class="val" id="v-miss"></span></label><input type="range" id="s-miss" min="0" max="0.12" step="0.01" value="' + S.p.miss + '"></div>' +
+        '<div class="ctl"><label for="s-heal">Healing a day, up to neutral: <span class="val" id="v-heal"></span></label><input type="range" id="s-heal" min="0" max="0.03" step="0.005" value="' + S.p.heal + '"></div>' +
+        '<div class="ctl"><label for="s-pct">Quiet when pings fall below: <span class="val" id="v-pct"></span> of usual</label><input type="range" id="s-pct" min="10" max="100" step="5" value="' + S.p.pct + '"></div>' +
+        '<div class="ctl"><label for="s-thr">Quiet when this many of the last 4 offers are missed: <span class="val" id="v-thr"></span></label><input type="range" id="s-thr" min="1" max="4" step="1" value="' + S.p.thr + '"></div>' +
+      '</div>' +
+      '<div id="simLive"></div>' +
+    '</div>';
+  }
+
+  function chartSVG(sim) {
+    var W = 640, H = 250, L = 38, R = 70, T = 14, B = 30;
+    var pw = W - L - R, ph = H - T - B, n = sim.series.length;
+    function x(i) { return L + (n === 1 ? 0 : (pw * i) / (n - 1)); }
+    function y(v) { return T + (1 - v) * ph; }
+    var g = "";
+    [0, 0.5, 1].forEach(function (v) {
+      g += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + y(v) + '" y2="' + y(v) + '" stroke="#d6dae3" stroke-width="1"' + (v === 0.5 ? ' stroke-dasharray="5 4"' : "") + '/>' +
+           '<text x="' + (L - 6) + '" y="' + (y(v) + 4) + '" font-size="11" text-anchor="end" fill="#5b6577">' + v.toFixed(1) + '</text>';
+    });
+    g += '<text x="' + (W - R + 6) + '" y="' + (y(0.5) - 4) + '" font-size="10.5" fill="#5b6577">neutral</text>';
+    var tl = sim.series.map(function (s, i) { return x(i) + "," + y(s.today); }).join(" ");
+    var fl = sim.series.map(function (s, i) { return x(i) + "," + y(s.fix); }).join(" ");
+    var dots = "";
+    sim.series.forEach(function (s, i) {
+      dots += '<circle cx="' + x(i) + '" cy="' + y(s.today) + '" r="3.2" fill="#b3261e"/>';
+      var cx = x(i), cy = y(s.fix);
+      dots += '<path d="M' + cx + ' ' + (cy - 4.5) + ' L' + (cx + 4.5) + ' ' + cy + ' L' + cx + ' ' + (cy + 4.5) + ' L' + (cx - 4.5) + ' ' + cy + ' Z" fill="#1a6b3c"/>';
+    });
+    var xl = "";
+    if (n <= 40) sim.series.forEach(function (s, i) {
+      if (i > 0) xl += '<text x="' + x(i) + '" y="' + (H - 10) + '" font-size="9.5" text-anchor="middle" fill="#5b6577">' + s.label + '</text>';
+    });
+    var last = sim.series[n - 1];
+    var lab = '<text x="' + (W - R + 6) + '" y="' + (y(last.today) + (last.today === last.fix ? 12 : 4)) + '" font-size="11" fill="#b3261e" font-weight="700">Today ' + last.today.toFixed(2) + '</text>' +
+              '<text x="' + (W - R + 6) + '" y="' + (y(last.fix) + (last.today === last.fix ? -2 : 4)) + '" font-size="11" fill="#1a6b3c" font-weight="700">Fixes ' + last.fix.toFixed(2) + '</text>';
+    return '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" role="img" aria-label="Score over time, today\'s rules against the fixes">' +
+      g + '<polyline points="' + tl + '" fill="none" stroke="#b3261e" stroke-width="2.5"/>' +
+      '<polyline points="' + fl + '" fill="none" stroke="#1a6b3c" stroke-width="2.5"/>' + dots + xl + lab + '</svg>';
+  }
+
+  function simLiveHTML(sim, q) {
+    var statusText = q.quiet ? 'The console shows <b>Quiet</b>: ' + q.why + '.' :
+      (S.checkedIn ? 'The console shows <b>Checked in</b>.' : 'The console shows <b>Normal</b>.');
+    function mins(v) { return ((1 - v) * MIN_PER_POINT).toFixed(1); }
+    var rules = '<table><tr><th></th><th>Today\'s rules</th><th>With the fixes</th></tr>' +
+      '<tr><td>Yes</td><td>+0.08</td><td>+0.08</td></tr>' +
+      '<tr><td>No (turned down)</td><td>-0.12</td><td>-0.12</td></tr>' +
+      '<tr><td>Miss</td><td>-0.12</td><td>-' + S.p.miss.toFixed(2) + '</td></tr>' +
+      '<tr><td>Healing</td><td>none</td><td>+' + S.p.heal.toFixed(3) + ' a day, up to 0.50, never above</td></tr>' +
+      '<tr><td>Check in</td><td>not possible</td><td>resets to 0.50, logged with Kip\'s name</td></tr></table>';
+    return '<div class="card">' +
+      '<h2>Meteor Mite\'s score, day ' + sim.day + '</h2>' +
+      '<div class="legend"><span><i style="background:#b3261e"></i>Today\'s rules (circles)</span><span><i style="background:#1a6b3c"></i>With the fixes (diamonds)</span></div>' +
+      chartSVG(sim) +
+      '<p class="fine" style="margin:4px 0 0">Y yes, N no, M miss, +Nd days pass, C check in. Dashed line is neutral (0.50).</p>' +
+      '<div class="rankgrid">' +
+        '<div class="rankcard">Today\'s rules<b>' + mins(sim.today) + ' min</b>A responder with a perfect score could be this far further away and still rank level.</div>' +
+        '<div class="rankcard">With the fixes<b>' + mins(sim.fix) + ' min</b>The same, with the fixes.</div>' +
+      '</div>' +
+      '<p class="fine" style="margin:6px 0 0">Estimate from the weights in config.py: proximity 0.60 over 45 minutes, recent acceptance 0.25. About 19 minutes per point of score.</p>' +
+      '<p style="margin:12px 0 0">' + statusText + '</p>' +
+    '</div>' +
+    '<div class="card"><h2>The rules in this simulator</h2>' + rules + '</div>';
+  }
+
+  function updateReadouts() {
+    var set = function (id, t) { var el = document.getElementById(id); if (el) el.textContent = t; };
+    set("v-pings", S.pings);
+    set("v-miss", "-" + S.p.miss.toFixed(2));
+    set("v-heal", "+" + S.p.heal.toFixed(3));
+    set("v-pct", S.p.pct + "%");
+    set("v-thr", S.p.thr + " of 4");
+  }
+
+  /* ---------- Rendering ---------- */
+  var CAPTIONS = {
+    console: "What Kip sees. Choose how he is told, then use the Score simulator tab to make Meteor Mite go quiet.",
+    phone: "What Meteor Mite sees. It changes with the simulator and with Kip's check-in.",
+    sim: "Press Replay to watch both rule sets run on the same offers. Then skip a few days and use Check in."
+  };
+
+  function render() {
+    var sim = simulate(), q = quietState(sim);
+    if (q.quiet && !S.prevQuiet) S.pushDismissed = false;
+    S.prevQuiet = q.quiet;
+    ["console", "phone", "sim"].forEach(function (t) {
+      document.getElementById("tab-" + t).setAttribute("aria-selected", S.tab === t ? "true" : "false");
+    });
+    document.getElementById("caption").textContent = CAPTIONS[S.tab];
+    var view = document.getElementById("view");
+    if (S.tab === "console") view.innerHTML = consoleHTML(sim, q);
+    else if (S.tab === "phone") view.innerHTML = phoneHTML(sim, q);
+    else { view.innerHTML = simStatic(); updateReadouts(); }
+    refreshLive(sim, q);
+    renderModal(sim);
+    renderToast(q);
+  }
+
+  function refreshLive(sim, q) {
+    if (S.tab === "sim") {
+      document.getElementById("simLive").innerHTML = simLiveHTML(sim, q);
+      var rb = document.getElementById("replayBtn"); if (rb) rb.disabled = S.playing;
+    }
+  }
+
+  function refresh() {
+    var sim = simulate(), q = quietState(sim);
+    if (q.quiet && !S.prevQuiet) S.pushDismissed = false;
+    S.prevQuiet = q.quiet;
+    if (S.tab === "sim") { refreshLive(sim, q); updateReadouts(); }
+    else render();
+    renderToast(q);
+  }
+
+  function renderToast(q) {
+    var root = document.getElementById("toastRoot");
+    if (S.mode === "push" && S.tab === "console" && q.quiet && !S.pushDismissed && !S.modal) {
+      root.innerHTML = '<div class="toast" role="alert"><b>Meteor Mite has gone quiet</b><div class="fine" style="color:#c9cfdb;margin-top:2px">' + q.why + '</div>' +
+        '<div class="acts"><button class="btn" data-act="open-checkin">Check in</button><button class="btn ghost" data-act="dismiss">Dismiss</button></div></div>';
+    } else root.innerHTML = "";
+  }
+
+  function renderModal(sim) {
+    var root = document.getElementById("modalRoot");
+    if (!S.modal) { root.innerHTML = ""; return; }
+    var outs = lastThree(sim).map(function (o) { return o.o === "yes" ? "taken" : (o.o === "no" ? "turned down" : "missed"); });
+    root.innerHTML = '<div class="overlay" data-act="close-modal"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="mt">' +
+      '<h3 id="mt">Check in with Meteor Mite</h3>' +
+      '<div class="fine">Reach them first. This only resets their standing once you have.</div>' +
+      '<div class="facts">' +
+        '<div><span>Pings, this week</span><b>' + S.pings + ' (usual ' + USUAL + ')</b></div>' +
+        '<div><span>Last yes</span><b>' + lastYesText(sim) + '</b></div>' +
+        '<div><span>Last three</span><b>' + (outs.length ? outs.join(", ") : "none yet") + '</b></div>' +
+        '<div><span>Standing, with the fixes</span><b>' + sim.fix.toFixed(2) + ' to 0.50</b></div>' +
+      '</div>' +
+      '<label class="check"><input type="checkbox" id="confirm-box"' + (S.confirmed ? " checked" : "") + '><span>I have reached Meteor Mite and confirmed they can take offers.</span></label>' +
+      '<div class="fine">Resets their standing to neutral and adds a line to the override log with your name. It does not put them ahead of anyone better placed.</div>' +
+      '<div class="actions"><button class="btn ghost" data-act="close-modal-btn">Cancel</button>' +
+      '<button class="btn" id="do-checkin" data-act="do-checkin"' + (S.confirmed ? "" : " disabled") + '>Check in</button></div>' +
       '</div></div>';
   }
 
-  function phoneView() {
-    var card = state.checkedIn
-      ? '<div class="card green"><b>Kip checked in with you</b>Your standing is back to neutral. Offers still go to whoever is best placed for each callout.</div>'
-      : '<div class="card amber"><b>You have had fewer offers lately</b>You are still on the list. Missed offers now count for less than before, and your standing recovers over time.</div>';
-    return '' +
-      '<div class="stage"><div class="phone"><div class="screen">' +
-        '<div class="phone-top"><b>Rook Responder</b><span>Meteor Mite &middot; Available</span></div>' +
-        '<div class="phone-body">' + card +
-          '<h2>Your last three offers</h2>' +
-          '<div class="offer"><span>Yesterday, 18:40</span>' + pill("Missed", "red") + '</div>' +
-          '<div class="offer"><span>3 days ago, 07:15</span>' + pill("Missed", "red") + '</div>' +
-          '<div class="offer"><span>6 days ago, 21:02</span>' + pill("Turned down", "grey") + '</div>' +
-        '</div>' +
-      '</div></div></div>' +
-      '<div class="hint">' + (state.checkedIn ? 'This is what the phone shows after Kip checks in.' :
-        'Go back to Kip\'s console and check in to see this change.') + '</div>';
-  }
+  /* ---------- Actions ---------- */
+  function stopTimer() { if (timer) { clearInterval(timer); timer = null; } S.playing = false; }
 
-  function render() {
-    document.getElementById("tab-console").setAttribute("aria-selected", state.tab === "console");
-    document.getElementById("tab-phone").setAttribute("aria-selected", state.tab === "phone");
-    document.getElementById("view").innerHTML = state.tab === "console" ? consoleView() : phoneView();
+  function replay() {
+    stopTimer();
+    S.events = []; S.log = []; S.checkedIn = false; S.pingsAtCheckin = null; S.pings = USUAL; S.prevQuiet = false;
+    var i = 0; S.playing = true;
+    var slider = document.getElementById("s-pings"); if (slider) slider.value = USUAL;
+    refresh();
+    timer = setInterval(function () {
+      if (i < SEQ.length) { S.events.push({ type: SEQ[i] }); S.events.push({ type: "day", n: 2 }); i++; }
+      else {
+        stopTimer(); S.pings = 4;
+        var s2 = document.getElementById("s-pings"); if (s2) s2.value = 4;
+      }
+      refresh();
+    }, 380);
   }
-
-  function openModal() { state.modal = true; state.confirmed = false; render(); }
 
   document.addEventListener("click", function (e) {
-    var id = e.target.id;
-    if (id === "tab-console") { state.tab = "console"; render(); }
-    else if (id === "tab-phone") { state.tab = "phone"; render(); }
-    else if (id === "open-row" || id === "open-banner") { openModal(); }
-    else if (id === "cancel" || id === "overlay") { state.modal = false; render(); }
-    else if (id === "do-checkin") {
-      var t = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-      state.checkedIn = true; state.modal = false;
-      state.log.unshift(t + " &middot; Kip &middot; Check in &middot; Meteor Mite &middot; standing reset to neutral");
+    var t = e.target.closest("[data-act],[data-tab]");
+    if (!t) return;
+    if (t.dataset.tab) { S.tab = t.dataset.tab; render(); return; }
+    var a = t.dataset.act;
+    if (a === "ev") { S.events.push({ type: t.dataset.t }); refresh(); }
+    else if (a === "day") { S.events.push({ type: "day", n: +t.dataset.n }); refresh(); }
+    else if (a === "replay") { replay(); }
+    else if (a === "open-checkin") { S.modal = true; S.confirmed = false; render(); }
+    else if (a === "close-modal") { if (e.target === t) { S.modal = false; render(); } }
+    else if (a === "close-modal-btn") { S.modal = false; render(); }
+    else if (a === "dismiss") { S.pushDismissed = true; refresh(); }
+    else if (a === "do-checkin") {
+      var sim = simulate();
+      S.log.unshift("Day " + sim.day + " &middot; Kip &middot; Check in &middot; Meteor Mite &middot; standing reset to neutral (" + sim.fix.toFixed(2) + " to 0.50)");
+      S.events.push({ type: "checkin" });
+      S.checkedIn = true; S.pingsAtCheckin = S.pings; S.modal = false; S.confirmed = false;
       render();
     }
-    else if (id === "reset") { state = { tab: "console", modal: false, confirmed: false, checkedIn: false, log: [] }; render(); }
+    else if (a === "reset") { stopTimer(); S = freshState(); render(); }
+  });
+
+  document.addEventListener("input", function (e) {
+    var id = e.target.id, v = +e.target.value;
+    if (id === "s-pings") S.pings = v;
+    else if (id === "s-miss") S.p.miss = v;
+    else if (id === "s-heal") S.p.heal = v;
+    else if (id === "s-pct") S.p.pct = v;
+    else if (id === "s-thr") S.p.thr = v;
+    else return;
+    refresh();
   });
 
   document.addEventListener("change", function (e) {
-    if (e.target.id === "confirm-box") {
-      state.confirmed = e.target.checked;
-      document.getElementById("do-checkin").disabled = !state.confirmed;
+    if (e.target.name === "mode") { S.mode = e.target.value; S.pushDismissed = false; render(); }
+    else if (e.target.id === "confirm-box") {
+      S.confirmed = e.target.checked;
+      var b = document.getElementById("do-checkin"); if (b) b.disabled = !S.confirmed;
     }
   });
 
   render();
+})();
 </script>
 </body>
 </html>
