@@ -77,6 +77,7 @@
 
   .overlay { position: fixed; inset: 0; background: rgba(20,24,36,.45); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 10; }
   .modal { background: #fff; border-radius: 12px; max-width: 470px; width: 100%; padding: 22px; }
+  .modal:focus { outline: none; }
   .modal h3 { font-size: 18px; }
   .facts { background: var(--bg); border-radius: 8px; padding: 10px 12px; margin: 12px 0; font-size: 14px; }
   .facts div { display: flex; justify-content: space-between; gap: 10px; padding: 2px 0; }
@@ -191,7 +192,7 @@
     var why = [];
     if (byVol) why.push("pings this week " + S.pings + ", usual " + USUAL);
     if (byMiss) why.push(misses + " of the last " + recent.length + " offers missed");
-    return { quiet: byMiss || byVol, why: why.join(" and ") };
+    return { quiet: byMiss || byVol, why: why.join(" and "), missWhy: byMiss ? misses + " of the last " + recent.length + " offers missed" : "" };
   }
 
   function chip(label, kind) { return '<span class="chip ' + kind + '">' + label + '</span>'; }
@@ -213,7 +214,7 @@
     var statusChip = "";
     if (S.mode === "badge") statusChip = q.quiet ? chip("Quiet", "amber") : (showChecked ? chip("Checked in", "green") : chip("Normal", "green"));
     else statusChip = showChecked ? chip("Checked in", "green") : chip("Normal", "green");
-    var note = q.quiet ? '<div class="sub">' + q.why + '</div>' : (showChecked ? '<div class="sub">Watching: does the miss rate come back down?</div>' : "");
+    var note = q.quiet ? (q.missWhy ? '<div class="sub">' + q.missWhy + '</div>' : "") : (showChecked ? '<div class="sub">Watching: does the miss rate come back down?</div>' : "");
     var rowAction = (S.mode === "badge" && q.quiet) ? '<button class="btn" data-act="open-checkin">Check in</button>' : "";
     var outcomes = lastThree(sim);
     var pills = outcomes.length ? outcomes.map(function (o) { return outcomeChip(o.o); }).join("") : '<span class="sub">no offers yet in this demo</span>';
@@ -232,6 +233,8 @@
         '<span class="fine" style="margin-right:6px">How Kip is told:</span>' +
         modeLabel("badge", "Badge on the list") + modeLabel("digest", "Daily digest") + modeLabel("push", "Push alert") +
       '</div>' +
+      '<div class="modes"><button class="btn" data-act="replay"' + (S.playing ? " disabled" : "") + '>Make Meteor Mite go quiet</button>' +
+        '<span class="fine">Plays a sample quiet streak, 9 of 14 offers missed.</span></div>' +
       '<div class="console">' +
         '<div class="topbar"><b>Rook Dispatch &middot; Console</b><span>Signed in as Kip &middot; Eastgate</span></div>' +
         '<div class="body">' + digest +
@@ -267,8 +270,8 @@
   /* ---------- Phone tab ---------- */
   function phoneHTML(sim, q) {
     var card;
-    if (S.checkedIn && !q.quiet) card = '<div class="pcard green"><b>Kip checked in with you</b>Your standing is back to neutral. Offers still go to whoever is best placed for each callout.</div>';
-    else if (q.quiet) card = '<div class="pcard amber"><b>You\'ve had fewer offers lately</b>You\'re still on the list. Missed offers now count for less than a refusal, and your standing recovers over time.</div>';
+    if (S.checkedIn && !q.quiet) card = '<div class="pcard green"><b>Kip checked in with you</b>Your place on the list is reset. Offers still go to whoever is best placed for each callout.</div>';
+    else if (q.quiet) card = '<div class="pcard amber"><b>You\'ve had fewer offers lately</b>You\'re still on the list. A missed offer now counts for less than turning one down, and your place on the list recovers over time.</div>';
     else card = '<div class="pcard grey"><b>You\'re on the list</b>Nothing to flag right now.</div>';
     var offers = lastThree(sim);
     var list = offers.length ? offers.map(function (o) {
@@ -294,7 +297,7 @@
           '<button class="btn ghost" data-act="day" data-n="7">Skip 7 days</button>' +
         '</div>' +
         '<div class="btnrow">' +
-          '<button class="btn ghost" data-act="replay" id="replayBtn">Replay Meteor Mite\'s pattern</button>' +
+          '<button class="btn ghost" data-act="replay" id="replayBtn">Replay a sample quiet streak (9 of 14 missed)</button>' +
           '<button class="btn ghost" data-act="open-checkin">Check in as Kip</button>' +
         '</div>' +
         '<div class="ctl"><label for="s-pings">Pings this week: <span class="val" id="v-pings"></span> (usual ' + USUAL + ')</label><input type="range" id="s-pings" min="0" max="20" step="1" value="' + S.pings + '"></div>' +
@@ -343,6 +346,12 @@
     var statusText = q.quiet ? 'The console shows <b>Quiet</b>: ' + q.why + '.' :
       (S.checkedIn ? 'The console shows <b>Checked in</b>.' : 'The console shows <b>Normal</b>.');
     function mins(v) { return ((1 - v) * MIN_PER_POINT).toFixed(1); }
+    var gapNote = "";
+    if (sim.offers.length && !S.checkedIn) {
+      var gap = r3(sim.fix - sim.today);
+      gapNote = '<p class="fine" style="margin:4px 0 0">' + (gap > 0 ? 'Right now the fixes sit ' + gap.toFixed(2) + ' above today\'s rules.' : 'Right now the fixes and today\'s rules are level.') +
+        ' The way back comes from yeses, time passing and Check in.</p>';
+    }
     var rules = '<table><tr><th></th><th>Today\'s rules</th><th>With the fixes</th></tr>' +
       '<tr><td>Yes</td><td>+0.08</td><td>+0.08</td></tr>' +
       '<tr><td>No (turned down)</td><td>-0.12</td><td>-0.12</td></tr>' +
@@ -353,7 +362,7 @@
       '<h2>Meteor Mite\'s score, day ' + sim.day + '</h2>' +
       '<div class="legend"><span><i style="background:#b3261e"></i>Today\'s rules (circles)</span><span><i style="background:#1a6b3c"></i>With the fixes (diamonds)</span></div>' +
       chartSVG(sim) +
-      '<p class="fine" style="margin:4px 0 0">Y yes, N no, M miss, +Nd days pass, C check in. Dashed line is neutral (0.50).</p>' +
+      '<p class="fine" style="margin:4px 0 0">Y yes, N no, M miss, +Nd days pass, C check in. Dashed line is neutral (0.50).</p>' + gapNote +
       '<div class="rankgrid">' +
         '<div class="rankcard">Today\'s rules<b>' + mins(sim.today) + ' min</b>A responder with a perfect score could be this far further away and still rank level.</div>' +
         '<div class="rankcard">With the fixes<b>' + mins(sim.fix) + ' min</b>The same, with the fixes.</div>' +
@@ -375,7 +384,7 @@
 
   /* ---------- Rendering ---------- */
   var CAPTIONS = {
-    console: "What Kip sees. Choose how he is told, then use the Score simulator tab to make Meteor Mite go quiet.",
+    console: "What Kip sees. Choose how he is told, then press Make Meteor Mite go quiet to watch his list change.",
     phone: "What Meteor Mite sees. It changes with the simulator and with Kip's check-in.",
     sim: "Press Replay to watch both rule sets run on the same offers. Then skip a few days and use Check in."
   };
@@ -423,9 +432,10 @@
 
   function renderModal(sim) {
     var root = document.getElementById("modalRoot");
+    var wasOpen = root.firstChild !== null;
     if (!S.modal) { root.innerHTML = ""; return; }
     var outs = lastThree(sim).map(function (o) { return o.o === "yes" ? "taken" : (o.o === "no" ? "turned down" : "missed"); });
-    root.innerHTML = '<div class="overlay" data-act="close-modal"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="mt">' +
+    root.innerHTML = '<div class="overlay" data-act="close-modal"><div class="modal" role="dialog" aria-modal="true" aria-labelledby="mt" tabindex="-1">' +
       '<h3 id="mt">Check in with Meteor Mite</h3>' +
       '<div class="fine">Reach them first. This only resets their standing once you have.</div>' +
       '<div class="facts">' +
@@ -439,10 +449,17 @@
       '<div class="actions"><button class="btn ghost" data-act="close-modal-btn">Cancel</button>' +
       '<button class="btn" id="do-checkin" data-act="do-checkin"' + (S.confirmed ? "" : " disabled") + '>Check in</button></div>' +
       '</div></div>';
+    if (!wasOpen) { var m = root.querySelector(".modal"); if (m) m.focus(); }
   }
 
   /* ---------- Actions ---------- */
   function stopTimer() { if (timer) { clearInterval(timer); timer = null; } S.playing = false; }
+
+  function returnFocus() {
+    var b = document.querySelector('[data-act="open-checkin"]') || document.querySelector('.tab[aria-selected="true"]');
+    if (b) b.focus();
+  }
+  function closeModal() { S.modal = false; render(); returnFocus(); }
 
   function replay() {
     stopTimer();
@@ -469,15 +486,15 @@
     else if (a === "day") { S.events.push({ type: "day", n: +t.dataset.n }); refresh(); }
     else if (a === "replay") { replay(); }
     else if (a === "open-checkin") { S.modal = true; S.confirmed = false; render(); }
-    else if (a === "close-modal") { if (e.target === t) { S.modal = false; render(); } }
-    else if (a === "close-modal-btn") { S.modal = false; render(); }
+    else if (a === "close-modal") { if (e.target === t) closeModal(); }
+    else if (a === "close-modal-btn") { closeModal(); }
     else if (a === "dismiss") { S.pushDismissed = true; refresh(); }
     else if (a === "do-checkin") {
       var sim = simulate();
       S.log.unshift("Day " + sim.day + " &middot; Kip &middot; Check in &middot; Meteor Mite &middot; standing reset to neutral (" + sim.fix.toFixed(2) + " to 0.50)");
       S.events.push({ type: "checkin" });
       S.checkedIn = true; S.pingsAtCheckin = S.pings; S.modal = false; S.confirmed = false;
-      render();
+      render(); returnFocus();
     }
     else if (a === "reset") { stopTimer(); S = freshState(); render(); }
   });
@@ -491,6 +508,10 @@
     else if (id === "s-thr") S.p.thr = v;
     else return;
     refresh();
+  });
+
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && S.modal) closeModal();
   });
 
   document.addEventListener("change", function (e) {
