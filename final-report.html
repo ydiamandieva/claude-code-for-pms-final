@@ -227,7 +227,7 @@
       <div class="beat"><div class="n">1 · 12 AUG</div><div class="big">6 changes</div><p>4.2 shipped six changes at once. Two matter most: the wait for an answer went from 90s to 60s, and ranking leaned harder on distance.</p></div>
       <div class="beat"><div class="n">2 · THE SPIKE</div><div class="big"><span data-count="2.3" data-dec="1">2.3</span>% → <span data-count="18" data-dec="0">18</span>%</div><p>Offers that nobody answered ("missed") jumped on release morning. Offers taken fell from 76.6% to 64.0%. Refusals barely moved.</p></div>
       <div class="beat"><div class="n">3 · THE FOUR</div><div class="big">3 of 40</div><p>Farlight, The Undertow, Vesper and Meteor Mite took 3 of 40 first pings after 4.2, against 175 of 247 before. They are about one third of the damage; the other twelve, about two thirds.</p></div>
-      <div class="beat"><div class="n">4 · THE ROOT</div><div class="big">1 line</div><p>Both 4.2 briefs were a single sentence with no goal and no success measure. Engineering built them exactly as written, and nobody saw how they would interact.</p></div>
+      <div class="beat"><div class="n">4 · THE ROOT</div><div class="big">1 line</div><p>Both 4.2 briefs were one sentence each, with an owner (Priya) but no goal and no success measure. Engineering built them exactly as written, and nobody saw how they would interact.</p></div>
     </div>
     <p class="src">Sources: pings table (database), <span class="mono">00-rook/4-2-impact-analysis.md</span>, CLAUDE.md (Modules 1, 3 and 4). Counts are observed; the cause is not yet proven (slide 9).</p>
   </div>
@@ -981,25 +981,27 @@
 <section class="slide" id="s-skill" data-title="The guard-rail">
   <div class="inner">
     <p class="kicker">How it doesn't happen again</p>
-    <h2>The 4.2 briefs would have been caught at the door.</h2>
+    <h2>Run on the 4.2 briefs, the skill catches two gaps and misses a third.</h2>
     <div class="skillgrid">
       <div>
-        <p class="lede" style="font-size:17px">The deeper failure was a brief, not a bug: <b>one sentence each, no goal, no success measure</b>. <span class="mono">review-checklist</span> asks the same four questions of every brief, before anyone builds.</p>
+        <p class="lede" style="font-size:17px">Both 4.2 briefs are <b>one sentence each, with an owner but no goal and no success measure</b>. I ran <span class="mono">review-checklist</span> on their exact wiki text on 2 Nov. Verdict on both: <b>Needs changes</b>.</p>
         <table class="map">
-          <tr><th>What the 4.2 briefs lacked</th><th>Test that asks for it</th></tr>
-          <tr><td>"Tune how long a ping waits": no success measure</td><td><b>2 · How will we know it worked?</b></td></tr>
-          <tr><td>No goal, so no problem stated before the fix</td><td><b>4 · Problem before the fix</b></td></tr>
-          <tr><td>Two changes, no word on how they combine</td><td><b>3 · Same scope, start to finish</b></td></tr>
-          <tr><td>Nobody named for the outcome</td><td><b>1 · Who owns it?</b></td></tr>
+          <tr><th>What the 4.2 briefs show</th><th>Test</th><th>Result, both briefs</th></tr>
+          <tr><td>"Tune how long a ping waits": no measure of success</td><td><b>2 · How will we know it worked?</b></td><td><span class="verdict v-Fail">Fail</span></td></tr>
+          <tr><td>No problem stated; straight to the fix</td><td><b>4 · Problem before the fix</b></td><td><span class="verdict v-Fail">Fail</span></td></tr>
+          <tr><td>Two changes, no word on how they combine</td><td><b>3 · Same scope, start to finish</b></td><td><span class="verdict v-Pass">Pass</span> <small style="color:var(--bad)">not caught</small></td></tr>
+          <tr><td>"Owner: Priya" is on both</td><td><b>1 · Who owns it?</b></td><td><span class="verdict v-Pass">Pass</span></td></tr>
         </table>
-        <p class="src">My reading, not a run: the two original 4.2 briefs exist only as one-line wiki entries, so I haven't run the skill on them. The last row is the skill's own standard, not a finding about 4.2.</p>
+        <p class="src"><b>Two things the run corrected.</b> Test 3 passes both briefs only because each is a single sentence; none of the four tests looks at how two changes interact. And an owner was named, so a named owner alone did not prevent 4.2 (Priya's own note says she "made calls faster than I checked them"). Source: the roadmap rows "Change to who gets pinged" and "Ping timeout tuning", last reviewed 30 Jun.</p>
       </div>
       <div>
-        <h3>What keeps it working</h3>
+        <h3>What keeps it running, for now</h3>
         <div class="guard">
-          <div><b>Monday review.</b> A session-only reminder runs it on every <span class="mono">brief.md</span> and appends the full output to <span class="mono">06-sidekicks/scheduled-run-output.txt</span>. Next run 9 Nov.</div>
+          <div><b>Honest limit.</b> The tests read the document, not the facts or the interactions. Test 3 passed both 4.2 briefs, and the 2 Nov brief is "Ready" while the small fix's number is still unconfirmed.</div>
+          <div><b>Monday review.</b> A session-only reminder runs it on every <span class="mono">brief.md</span> and appends the full output to <span class="mono">06-sidekicks/scheduled-run-output.txt</span>. Next run 9 Nov. It covers only files named <span class="mono">brief.md</span>; briefs elsewhere, such as the wiki, are not checked.</div>
           <div><b>Renewal.</b> <span class="mono">renew-reminders</span> re-creates it before its 7-day expiry. Both die if the session closes. They already died once, between 20 Oct and 1 Nov, and were re-created.</div>
-          <div><b>Honest limit.</b> The skill checks the document, not the facts. The brief is "Ready" while the small fix's number is still unconfirmed.</div>
+          <div><b>How I'll know it works.</b> Every brief has a recorded "Ready" run before anyone builds. Today: one brief on file, Ready on 2 Nov. The 4.2 briefs had no run before build. This is not yet tracked over time.</div>
+          <div><b>After launch.</b> Nothing here watches for silence once a change ships (the first quiet ticket came on 17 Aug). The Quiet marker in the prototype (slide 10) would. It is not built.</div>
         </div>
       </div>
     </div>
