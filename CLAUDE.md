@@ -215,3 +215,9 @@ may fill some of this in.
 - A Monday review of briefs is a session-only reminder (next run 26 Oct, about 9:43), with a one-shot renewal on 25 Oct. Both die if the session closes. Output goes to `06-sidekicks/scheduled-run-output.txt`, which already held a 13 Oct sample run over a `06-sidekicks/briefs/` folder that is not in the course folder. Writing outside the course folder stays off-limits, so skills are not in `~/.claude/skills/`.
 - The Module 5 brief (`05-super-speed/brief.md`) was edited with the ticket and delivery findings; it still has no named owner and no success targets.
 - Full detail: 06-sidekicks/session-notes.md (2026-10-20).
+
+- Module 6 (1 to 2 Nov): the Module 5 brief now passes `review-checklist` on all four tests (Ready). Owner is named (Yanita, Dispatch PM), scope is stated (what handlers and responders see when a responder goes quiet; the 60s timer, Availability Confidence and Supply are set aside with owners), and the first ask of Helen is whether to hold engineering's small fix until the real scores are in.
+- The small fix is described as a blunter version of build step (3)'s first item (a miss costs less than a "no"), most likely lowering the shared 0.12 penalty. No file confirms the number; if it is the 60s wait instead, the scope line and hold decision contradict. Ask the engineering manager and staff engineer.
+- Reminders died with the session between 20 Oct and 1 Nov (no 26 Oct output) and were re-created: Monday review next 9 Nov about 9:43, renewal 7 Nov about 9:07. Still session-only. No PRD for the on-leave status exists (only ticket 3143).
+- Superseded: the Module 6 lines above that say the brief "still has no named owner and no success targets" (owner is now named; numeric targets are deferred until two weeks of data), that `review-checklist` was run "once", and that the Monday review's next run is 26 Oct.
+- Full detail: 06-sidekicks/session-notes.md (2026-11-02).

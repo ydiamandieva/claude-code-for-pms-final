@@ -103,3 +103,72 @@ Scheduling: `CronCreate` cron `13 9 * * 1` (Mondays), result next run 26 Oct abo
 ### Start here next time
 
 Check `06-sidekicks/scheduled-run-output.txt` for a Monday 26 Oct entry. If there isn't one, the session closed before it fired: re-create the Monday reminder and run `renew-reminders`. Then run `meeting-recap` on a real set of notes.
+
+## 2026-11-02
+
+This entry covers the work from 1 to 2 Nov. The session was resumed after the 20 Oct entry above. Today's date in the session was 2 Nov.
+
+### Questions and answers
+
+- **Did the reminders survive?** No. When the session reopened on 1 Nov, CronList showed no jobs and there was no 26 Oct entry in `06-sidekicks/scheduled-run-output.txt`. Session-only reminders die when the session closes, as the 20 Oct entry warned. They were re-created on request. At wrap-up CronList shows the Monday review (id 14fd7ab2, next run 9 Nov about 9:43) and a one-shot renewal (id f7f6ffa0, 7 Nov about 9:07).
+- **Does the brief pass review-checklist now?** It started the session at Needs changes and ended at Ready, with all four tests Pass, after five rounds of edits and re-checks (prompts 10 to 18). The changes: owner named ("Yanita, Dispatch PM"); a scope line ("what handlers and responders see when a responder stops getting jobs, and how they get back. The 60-second timer is a later decision."); an overview sentence on the first decision asked of Helen (hold engineering's small fix); Check in related to healing scores (section 7); the responder message added to the plan.
+- **What is "engineering's small fix"?** I searched the folder (`05-super-speed/director-request.txt`, the Module 5 notes, CLAUDE.md, `4-2-impact-analysis.md`, `history.py`, `config.py`). Helen's note says engineering could ship "a small fix" that afternoon and the ask is not to "quietly change a number". No file names the number. The code candidates are the shared decline/miss penalty `DECLINE_PENALTY = 0.12` and `OFFER_TIMEOUT_SECONDS = 60`. The brief now says "most likely lowering the 0.12 penalty" and keeps it as an open question for the engineering manager and staff engineer. I could not confirm it.
+- **Is the small fix the same change as the build plan?** Partly. The brief now says it is a blunter version of the first item in build step (3) (a miss costs less than a "no"): no separate cost for a miss, no healing, no Quiet tag, no Check in, no responder message. This explains why both the hold and the build wait on the real scores. The student's own edit had added "most likely the miss penalty", which created a scope overlap that this wording removes. If the small fix is the 60-second wait instead, the scope line and the hold decision would contradict each other.
+- **Dry run on a PRD for the on-leave status.** No such PRD exists in the folder, the wiki or the database. The only traces are support ticket 3143 ("Request: mark a responder as on leave") and a mention in `00-rook/4-2-impact-analysis.md`. The student chose to dry-run the Monday review on the Module 5 brief instead. Result: Ready, all four Pass, nothing written to `scheduled-run-output.txt`.
+
+### Findings
+
+- **Observed (brief.md, review-checklist):** latest verdict Ready, all four tests Pass, no "Fix before sharing". Caveats the check can't close: the small-fix number is unconfirmed and the figures were not re-checked in the last runs.
+- **Observed (folder search):** only one `brief.md` exists under `00-rook` to `06-sidekicks`, so the Monday review has one brief to check. The `06-sidekicks/briefs/` folder behind the 13 Oct sample is still not in the course folder.
+- **Observed (git):** `.claude/skills/idea-to-prototype/` and `.claude/skills/three-pro-review/` appeared in the project during this stretch. I did not create them; the idea-to-prototype file shows as modified and three-pro-review is new. The save routine will commit both.
+- **Inferred (low confidence):** the small fix is the shared 0.12 penalty. Source: Helen's wording plus `config.py`, no direct statement.
+
+### Reversals
+
+- **CLAUDE.md Module 6 lines (20 Oct):** "it still has no named owner and no success targets" no longer holds for the owner (named). Success measures now exist with direction and time frame; numeric targets are deliberately deferred until two weeks of data.
+- **CLAUDE.md Module 6 lines (20 Oct):** "Only `review-checklist` has been run, once" is out of date. It has now been run many times on the brief, and once as a dry-run Monday review.
+- **CLAUDE.md Module 6 lines (20 Oct):** the "next run 26 Oct" and "renewal on 25 Oct" reminders did not survive. The live ones are 9 Nov and 7 Nov.
+- **The 20 Oct review (Needs changes: owner Fail, success and scope Partial)** is overturned by the 2 Nov review (Ready), because the brief was edited, not because the standard changed.
+
+### Queries and checks that mattered
+
+- Each re-check ran the `review-checklist` skill (`.claude/skills/review-checklist/SKILL.md`) on `05-super-speed/brief.md` and printed the verdict table, "Fix before sharing" and "Not checked".
+- Brief file history: `git log` shows the brief last changed in commit `a5703d5`; `scheduled-run-output.txt` appended in `0bb782c` ("Monday brief review, 2 Nov").
+- Brief search for the small fix: read `05-super-speed/director-request.txt` and grep across the folder for "small fix", "afternoon", "0.12" and "60".
+- Reminders: CronList, then CronCreate for the Monday job (`13 9 * * 1`) and the one-shot renewal.
+- No new SQL this session. The database figures in the brief (3 of 40 vs 175 of 247 first pings; 15 of 20 missed from 19 Aug to 5 Sep) were checked on 20 Oct, see the entry above.
+
+### Decisions and recommendations
+
+- Hold engineering's small fix until the real scores are in, with an end date to agree with the staff engineer. Wording in the brief: "Hold engineering's small fix until the real scores are in (end date to be agreed with the staff engineer)?" My recommendation: yes, because if the 60-second wait is the cause, a score change only softens the damage.
+- Check in is a one-time reset to neutral by a handler who has reached the responder, and healing carries on from neutral. This is proposed for the staff engineer to confirm (section 7 of the brief).
+- The 60-second timer, Availability Confidence and Rook Supply are set aside, each with an owner in section 7 (engineering manager; Helen; Supply team).
+- Monday review stays a session-only reminder that appends the full output to `06-sidekicks/scheduled-run-output.txt`. A dry run writes nothing.
+
+### Files and artifacts made
+
+- `05-super-speed/brief.md` (edited several times; last committed in `a5703d5`)
+- `06-sidekicks/scheduled-run-output.txt` (appended the 2 Nov entry; commit `0bb782c`)
+- `06-sidekicks/prompts.md` (prompts 10 to 19 added) and this file
+- `CLAUDE.md` (short Module 6 summary added)
+- Not mine: `.claude/skills/idea-to-prototype/SKILL.md` (modified) and `.claude/skills/three-pro-review/` (new)
+- No artifacts published this session.
+
+### What we couldn't see
+
+- Which number the small fix changes. No file says.
+- Real scores, answer times and push logs for the four quiet responders. All database data still ends 6 to 7 Sep, now eight weeks old.
+- Whether there is a PRD for the on-leave status. None exists in the folder, wiki or database.
+- The brief's figures were not re-checked against the database in the 2 Nov runs.
+
+### Open questions
+
+- Which number is the small fix, and when can the real scores be pulled so the hold has an end date? Engineering manager and staff engineer.
+- How do Check in and healing fit together; does a reset count as a "yes"? Staff engineer.
+- Is Availability Confidence still a Q3 commitment (Q3 ended 30 Sep)? Director of Product.
+- Where is the on-leave PRD, or should one be drafted from ticket 3143? Student, then the Director of Product.
+- Is the `06-sidekicks/briefs/` folder meant to be in the course folder? Instructor.
+
+### Start here next time
+
+Check `06-sidekicks/scheduled-run-output.txt` for a 9 Nov entry. If the session closed, CronList will be empty: re-create the Monday reminder and run `renew-reminders`. Then ask the engineering manager which number the small fix changes, since that settles the brief's last open scope question.
