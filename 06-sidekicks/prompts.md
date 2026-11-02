@@ -88,3 +88,30 @@ Tweak the third paragraph splitting it at a 'blunter version' to read more easil
 ### 19.
 
 dry run it on a PRD for the on leave status
+
+### 20.
+
+Read CLAUDE.md and all six prompts.md files in this repo. For each module, pull one real finding or artifact and the exact prompt I wrote that produced it. Build a single HTML presentation that says plainly what happened with Release 4.2, backs it up with those findings and prompts, shows the fix through my prototype, and explains how my skill keeps it from happening again. Make it visually engaging, not just text. Save it as final-report.html, then save my work.
+
+### 21.
+
+For Module 1 link - check Startup check cha, you might be able to find the session notes there and link the prompt(s) to its finding by topic and order.
+
+### 22.
+
+For Skill slide point - run only the Multi-Perspective Product Leadership Review & Challenge Skill
+
+### 23.
+
+Yes, please - apply the two Must items and the Should items
+
+### 24.
+
+update the slide to say that too.
+
+### 25.
+
+<!-- reply 1 -->
+> Module 5 attribution: the three-tab prototype in the deck was rebuilt after prompt #18, but I haven’t confirmed that prompt triggered the rebuild.
+
+Rebuild again based on all changes to date.

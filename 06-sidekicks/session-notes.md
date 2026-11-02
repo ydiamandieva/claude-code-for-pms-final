@@ -172,3 +172,67 @@ This entry covers the work from 1 to 2 Nov. The session was resumed after the 20
 ### Start here next time
 
 Check `06-sidekicks/scheduled-run-output.txt` for a 9 Nov entry. If the session closed, CronList will be empty: re-create the Monday reminder and run `renew-reminders`. Then ask the engineering manager which number the small fix changes, since that settles the brief's last open scope question.
+
+## 2026-11-02 (second entry: the final report)
+
+This entry covers the work after the first 2 Nov wrap-up: building `final-report.html` and checking its skill slide. The first 2 Nov entry above covers the brief edits and the Monday review.
+
+### Questions and answers
+
+- **Build a single HTML presentation of what happened with 4.2 (prompt 20).** Read CLAUDE.md, all six `prompts.md` files and the module session notes. Built a 12-slide deck: title, the four-beat story, one slide per module (your exact prompt on the left, one finding on the right), the cause, the live prototype, the skill, and what is still unseen. Charts are drawn in the page from numbers already in CLAUDE.md and the module notes. The prototype is embedded in the page, so the file works on its own. It replaced the earlier `final-report.html` from 20 Oct, which stays in git history (`7598b3c`).
+- **The prompt-to-finding pairs used.** Module 1 prompt 2 (what can you reach); Module 2 prompt 5 (tickets); Module 3 prompt 1 (weekly callout numbers); Module 4 prompt 7 (what takes points off, what puts them back); Module 5 prompt 5 (build a prototype); Module 6 prompt 4 (the review-checklist skill).
+- **"Check the Setup check chat for the Module 1 link" (prompt 21).** Read your earlier chats (read-only, stored outside the course folder, because you asked). They show prompt 2 was answered on 6 Oct with "wiki and database not reachable": that session was opened in the home folder, so the two servers never loaded. The Setup check chat two minutes later showed both answering (wiki found "Team directory", database returned 15 handlers). The five database tables were first listed on 8 Oct, during the Module 2 work. The Module 1 slide was rebuilt as a three-step "what can I reach" ladder.
+- **Run the product-leadership review board on the Skill slide (prompt 22).** Quick Review, four separate passes in one session (shared model and context, so agreement is weaker evidence). Verdict: Ready with conditions. Must items: the headline "would have been caught at the door" overclaimed, and row 3 of the table ("two changes, no word on how they combine" mapped to the scope test) was not supported by the skill's own wording.
+- **Apply the Must and Should items (prompts 23, 24).** Pulled the exact text of the two 4.2 briefs from the wiki ("Change to who gets pinged", "Ping timeout tuning") and ran `review-checklist` on both. Both: Needs changes. Owner Pass ("Owner: Priya"), Success Fail, Scope Pass (trivially, one sentence), Problem-before-fix Fail. The slide now shows the real run, a retitled right-hand column ("What keeps it running, for now", honest limit first), a success measure for the guard-rail itself, and a line on post-release detection.
+- **Rebuild from all changes to date and confirm the Module 5 attribution (prompt 25).** Confirmed from the Module 5 notes and the 1 to 2 Nov chat: prompt 5 built the first console-and-phone version on 20 Oct; prompt 18 (questions until 95% confident) led to the three-tab rebuild on 22 Oct (`deb2c50`); a separate 2 Nov session ran an engineer, architect and designer review and applied its changes (`2392ed0`). Slides 7 and 10 now say so.
+
+### Findings
+
+- **Observed (the two 4.2 roadmap rows in the wiki, last reviewed 30 Jun):** each is a single sentence, with "Owner: Priya", "Status: Committed", "Target release: 4.2". Neither states a goal, a problem or a success measure.
+- **Observed (review-checklist on both):** Needs changes on both. Test 3 (scope) passes both only because each is one sentence. None of the four tests looks at how two changes interact.
+- **Observed (chats):** prompt 2 on 6 Oct could not reach the wiki or database; reaching them required a session started in the course folder.
+- **Observed (git):** the `three-pro-review` skill was committed in `acfb9f1` and deleted on disk by 2 Nov 13:48 (the deletion is recorded in `3798b0a`). The skills folder now holds `course-setup`, `fleet-intel-radar`, `idea-to-prototype`, `meeting-recap`, `product-leadership-review-board`, `renew-reminders`, `review-checklist`, `wrap-up`. I do not know where `fleet-intel-radar` and `product-leadership-review-board` came from.
+- **Observed (screen):** the deck and its embedded prototype render and respond in the browser pane at 1280 wide: charts, the score slider, the verdict toggle, and the prototype tour (steps 1, 2, 4, 5 verified; step 3 needs Meteor Mite to finish going quiet first).
+- **Inferred (review board, medium confidence):** the guard-rail has no check on interactions between changes, which is the likeliest gap behind 4.2; and a named owner alone did not prevent it.
+
+### Reversals
+
+- **Module 1 slide (my earlier build today).** It claimed prompt 2 produced "five tables and no answer-time column". The 6 Oct chat shows that prompt got "not reachable". Corrected on the slide.
+- **Skill slide (my earlier build today).** "Would have been caught at the door" and the row "Nobody named for the outcome" were wrong or overclaimed: both briefs name an owner, and the scope test does not catch interaction. Corrected after the real run.
+- **CLAUDE.md Module 5 follow-up line ("I never saw it on screen, pane too small"):** the prototype has now been seen working on screen, embedded in the deck.
+
+### Queries and checks that mattered
+
+- Briefs: `search_wiki` with an empty query listed everything; `read_page` on ids `3eac8516-f501-816f-82d3-d453e277741c` ("Change to who gets pinged") and `3eac8516-f501-814c-9502-ccfe4a48de80` ("Ping timeout tuning").
+- Earlier chats: searched session transcripts for "What can you reach from here" and "Give me the TLDR"; read the 6 Oct, Setup check and 8 Oct chats' tool calls and replies. Read-only; nothing written outside the folder.
+- Prompt counts: `grep -c '^### ' <module>/prompts.md` gives 3, 6, 17, 11, 18, 25 (80 in all; the deck was first built at 74, before this wrap-up added six).
+- Tag balance of the deck's HTML was checked with a small script; slides were screenshotted at 1280 by 800.
+
+### Decisions and recommendations
+
+- Keep the Monday review as a session-only reminder (your 20 Oct decision), and say so on the slide. The durable alternative would write outside the course folder, so it was not done.
+- Review board "Consider" items left undone: a fifth test about what a change interacts with (needs the staff engineer's input, and changes the skill), widening which briefs the Monday run covers, and a note that the review output sits in a public repo.
+- Wording of the guard-rail's own measure on the slide: "Every brief has a recorded 'Ready' run before anyone builds." Today it is one brief, not yet tracked over time.
+
+### Files and artifacts made
+
+- `final-report.html` (rebuilt; commits `3798b0a`, `eb0e178`, `a53ba61`, `913182f`, plus this wrap-up). No published artifact; it is a file in the repo.
+- `06-sidekicks/prompts.md` (prompts 20 to 25 added), this file, and `CLAUDE.md` (short summary).
+- A build template and temporary files sit in the session scratchpad outside the folder and are not saved.
+
+### What we couldn't see
+
+- The chart palette validator could not run (no Node installed), so colour contrast was not machine-checked. Every series is directly labelled.
+- Phone-width and print layouts were only glanced at.
+- Real scores, "yes" answer times and push logs, and all data after 6 Sep: unchanged, and they limit every cause claim in the deck.
+- Origin of `fleet-intel-radar` and `product-leadership-review-board`.
+
+### Open questions
+
+- Is the small fix the shared 0.12 penalty or the 60s wait? Engineering manager and staff engineer.
+- Should a fifth test ("what does this change interact with?") be added to `review-checklist`? Staff engineer, with you as owner of the skill.
+- Does Helen agree to hold the small fix and to the three measures? Director of Product.
+
+### Start here next time
+
+Ask the staff engineer and engineering manager for the real scores, "yes" answer times and push logs, since every decision in the brief and the deck waits on them. Then check `06-sidekicks/scheduled-run-output.txt` for a 9 Nov entry; if the session was closed, re-create the Monday reminder and run `renew-reminders`.

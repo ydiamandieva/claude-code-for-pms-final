@@ -227,3 +227,9 @@ may fill some of this in.
 - Open: what engineering's small fix is, when the real scores can be pulled, and whether Helen accepts the Check in rule and the three measures.
 - Superseded: the Module 5 open item "whether Check in needs the handler to confirm they spoke to the responder (a checkbox I added)" is now a recommendation in the brief, awaiting Helen and Kip.
 - Full detail: 05-super-speed/session-notes.md (2026-11-02).
+
+- Final report (2 Nov): `final-report.html` is a 12-slide deck with one prompt-and-finding slide per module, the prototype embedded and clickable, and a skill slide. It replaced the 20 Oct version (still in git history). Module 5's three-tab rebuild is confirmed as prompt 18's 95%-confident questions (22 Oct, `deb2c50`), then a 2 Nov three-reviewer pass (`2392ed0`).
+- `review-checklist` was run on the two original 4.2 roadmap briefs (wiki, last reviewed 30 Jun): both Needs changes. Each is one sentence with "Owner: Priya" but no goal and no success measure; the scope test passes both, so nothing in the four tests catches how two changes interact. A product-leadership review of the skill slide gave Ready with conditions, and the Must and Should items were applied.
+- Module 1 correction: prompt 2 on 6 Oct was answered "wiki and database not reachable" (session opened in the home folder). The Setup check chat then showed both answering, and the database tables were first listed on 8 Oct. Skills now in the folder: `idea-to-prototype`, `fleet-intel-radar`, `product-leadership-review-board` alongside the three from Module 6; `three-pro-review` was deleted.
+- Superseded: the Module 5 follow-up line "I never saw it on screen (pane too small)" (the prototype has now been seen working in the deck), and the Module 6 line "three project skills now exist" (more skills now exist, listed above).
+- Full detail: 06-sidekicks/session-notes.md (2026-11-02, second entry).
