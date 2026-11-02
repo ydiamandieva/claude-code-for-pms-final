@@ -4,381 +4,490 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Release 4.2 final report</title>
-<meta name="description" content="What happened with Rook Dispatch Release 4.2, the evidence, the prototype fix and the skill that guards against a repeat.">
+<meta name="description" content="What happened with Rook Dispatch Release 4.2, the evidence and the exact prompts behind it, the prototype fix, and the skill that guards against a repeat.">
 <style>
   :root {
-    --bg: #0d1222; --bg2: #121a30; --panel: #182142; --panel2: #1f2a52; --line: #2c3a6b;
-    --ink: #eef1fb; --muted: #9aa5c8; --dim: #6c7799;
-    --taken: #56a8ff; --missed: #ffb020; --bad: #ff5d6c; --good: #3ddc97; --violet: #a78bfa;
+    --bg: #0b1020; --bg2: #0f1630; --panel: #141b34; --panel2: #1a2344; --line: #263059;
+    --ink: #eef1fb; --muted: #a3accb; --dim: #7580a6;
+    --taken: #56a8ff; --down: #b39bff; --missed: #ffb020; --bad: #ff6b7a; --good: #3ddc97;
     --radius: 16px;
   }
   * { box-sizing: border-box; }
-  html { scroll-snap-type: y proximity; scroll-behavior: smooth; color-scheme: dark; }
+  html { color-scheme: dark; scroll-snap-type: y proximity; scroll-behavior: smooth; }
   body { margin: 0; background: var(--bg); color: var(--ink);
          font: 17px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
   a { color: var(--taken); }
   code, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  button { font: inherit; color: inherit; }
+  :focus-visible { outline: 2px solid var(--missed); outline-offset: 2px; }
 
-  /* chrome */
-  #progress { position: fixed; top: 0; left: 0; height: 4px; width: 0; background: linear-gradient(90deg, var(--taken), var(--missed)); z-index: 50; transition: width .2s; }
-  #dots { position: fixed; right: 14px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 9px; z-index: 40; }
+  #progress { position: fixed; top: 0; left: 0; height: 4px; width: 0; background: linear-gradient(90deg, var(--taken), var(--missed)); z-index: 60; transition: width .25s; }
+  #dots { position: fixed; right: 12px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 8px; z-index: 50; }
   #dots button { width: 11px; height: 11px; border-radius: 50%; border: 1.5px solid var(--dim); background: transparent; padding: 0; cursor: pointer; }
-  #dots button.on { background: var(--missed); border-color: var(--missed); transform: scale(1.25); }
-  #dots button:focus-visible, .tab:focus-visible, .btn:focus-visible { outline: 2px solid var(--missed); outline-offset: 2px; }
-  #hint { position: fixed; left: 18px; bottom: 14px; font-size: 12px; color: var(--dim); z-index: 40; }
+  #dots button.on { background: var(--missed); border-color: var(--missed); transform: scale(1.3); }
+  #counter { position: fixed; left: 18px; bottom: 12px; font-size: 12px; color: var(--dim); z-index: 50; }
 
-  /* slides */
-  .slide { min-height: 100vh; scroll-snap-align: start; padding: 64px max(28px, 6vw) 56px; display: flex; flex-direction: column; justify-content: center; position: relative; }
+  .slide { min-height: 100vh; scroll-snap-align: start; padding: 56px max(24px, 6vw) 52px; display: flex; flex-direction: column; justify-content: center; position: relative; overflow: hidden; }
   .slide:nth-of-type(even) { background: var(--bg2); }
-  .inner { width: 100%; max-width: 1120px; margin: 0 auto; }
+  .inner { width: 100%; max-width: 1160px; margin: 0 auto; position: relative; }
   .kicker { font-size: 13px; letter-spacing: .14em; text-transform: uppercase; color: var(--missed); font-weight: 700; margin: 0 0 10px; }
   h1, h2 { margin: 0 0 14px; line-height: 1.08; letter-spacing: -.02em; }
-  h1 { font-size: clamp(40px, 7vw, 84px); }
-  h2 { font-size: clamp(28px, 4.2vw, 48px); }
-  h3 { margin: 0 0 6px; font-size: 18px; }
-  .lede { font-size: clamp(18px, 2vw, 22px); color: var(--muted); max-width: 760px; margin: 0 0 28px; }
+  h1 { font-size: clamp(38px, 6.6vw, 80px); }
+  h2 { font-size: clamp(26px, 3.8vw, 44px); }
+  h3 { margin: 0 0 6px; font-size: 17px; }
+  p { margin: 0 0 12px; }
+  .lede { font-size: clamp(17px, 1.9vw, 21px); color: var(--muted); max-width: 780px; margin: 0 0 24px; }
   .lede b, .lede strong { color: var(--ink); }
-  .src { font-size: 12.5px; color: var(--dim); margin-top: 18px; }
-  .grid { display: grid; gap: 18px; }
-  .g2 { grid-template-columns: 1fr 1fr; } .g3 { grid-template-columns: repeat(3, 1fr); } .g4 { grid-template-columns: repeat(4, 1fr); }
+  .src { font-size: 12.5px; color: var(--dim); margin-top: 14px; }
   .card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; }
-  .card.flat { background: transparent; }
-  .pill { display: inline-block; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 999px; }
-  .pill.taken { background: rgba(86,168,255,.16); color: var(--taken); }
-  .pill.missed { background: rgba(255,176,32,.16); color: var(--missed); }
-  .pill.bad { background: rgba(255,93,108,.16); color: var(--bad); }
-  .pill.good { background: rgba(61,220,151,.16); color: var(--good); }
-  .pill.dim { background: rgba(154,165,200,.14); color: var(--muted); }
-  .btn { font: inherit; font-weight: 600; background: var(--panel2); color: var(--ink); border: 1px solid var(--line); border-radius: 10px; padding: 9px 16px; cursor: pointer; }
-  .btn:hover { border-color: var(--missed); }
-  .btn.primary { background: var(--missed); color: #1b1300; border-color: var(--missed); }
+  .grid { display: grid; gap: 18px; }
+  .tag { display: inline-block; font-size: 11.5px; font-weight: 700; padding: 3px 9px; border-radius: 999px; letter-spacing: .02em; }
+  .tag.obs { background: rgba(61,220,151,.15); color: var(--good); }
+  .tag.inf { background: rgba(255,176,32,.15); color: var(--missed); }
+  .tag.gap { background: rgba(255,107,122,.15); color: var(--bad); }
+  .tag.dim { background: rgba(163,172,203,.14); color: var(--muted); }
 
-  /* reveal */
-  .rv { opacity: 0; transform: translateY(18px); transition: opacity .6s ease, transform .6s ease; }
-  .slide.in .rv { opacity: 1; transform: none; }
-  .slide.in .rv:nth-child(2) { transition-delay: .08s; } .slide.in .rv:nth-child(3) { transition-delay: .16s; } .slide.in .rv:nth-child(4) { transition-delay: .24s; }
+  /* title slide */
+  #s-title .inner { display: grid; grid-template-columns: 1.15fr .85fr; gap: 28px; align-items: center; }
+  .byline { color: var(--muted); font-size: 16px; margin-top: 18px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
+  .chip { background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px; font-size: 14px; color: var(--muted); }
+  .chip b { color: var(--ink); }
+  .radar text { font-size: 11px; fill: var(--muted); }
+  .ring { fill: none; stroke: var(--taken); stroke-width: 1.5; transform-box: fill-box; transform-origin: center; animation: ping 3.2s ease-out infinite; opacity: 0; }
+  @keyframes ping { 0% { transform: scale(.3); opacity: .8; } 100% { transform: scale(3.4); opacity: 0; } }
+  .responder { fill: var(--taken); }
+  .quietdot { fill: #3a4468; stroke: var(--bad); stroke-width: 1.5; stroke-dasharray: 3 3; }
 
-  /* hero */
-  .hero-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 34px; max-width: 860px; }
-  .big { font-size: clamp(38px, 6vw, 72px); font-weight: 800; line-height: 1; letter-spacing: -.03em; }
-  .big .arrow { color: var(--dim); font-weight: 400; padding: 0 .12em; }
-  .big .from { color: var(--muted); } .big .to.t { color: var(--taken); } .big .to.m { color: var(--missed); }
-  .stat-label { margin-top: 8px; color: var(--muted); font-size: 15px; }
+  /* what happened */
+  .beats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .beat { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; position: relative; }
+  .beat .n { font-size: 12px; color: var(--missed); font-weight: 800; letter-spacing: .1em; }
+  .beat .big { font-size: clamp(30px, 3.4vw, 44px); font-weight: 800; line-height: 1.05; margin: 6px 0 8px; letter-spacing: -.02em; }
+  .beat p { font-size: 15px; color: var(--muted); margin: 0; }
+  .beat .arrow { color: var(--dim); font-size: 18px; }
 
-  /* timeline */
-  .timeline { position: relative; display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; margin: 8px 0 26px; }
-  .timeline::before { content: ""; position: absolute; left: 0; right: 0; top: 11px; height: 3px; background: linear-gradient(90deg, var(--line), var(--missed), var(--bad)); border-radius: 3px; }
-  .tl { position: relative; padding-top: 34px; }
-  .tl::before { content: ""; position: absolute; top: 3px; left: 0; width: 18px; height: 18px; border-radius: 50%; background: var(--bg2); border: 3px solid var(--missed); }
-  .tl.red::before { border-color: var(--bad); }
-  .tl .d { font-weight: 800; font-size: 15px; } .tl p { margin: 4px 0 0; font-size: 14.5px; color: var(--muted); }
-
-  .kv { display: flex; gap: 10px; align-items: baseline; margin: 6px 0; font-size: 15.5px; }
-  .kv .k { flex: 0 0 22px; font-size: 18px; }
-  ul.tight { margin: 8px 0 0; padding-left: 20px; } ul.tight li { margin: 4px 0; color: var(--muted); } ul.tight li b { color: var(--ink); }
-
-  /* charts */
+  /* module slides */
+  .modgrid { display: grid; grid-template-columns: 5fr 7fr; gap: 24px; align-items: stretch; }
+  .modnum { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+  .modnum .badge { width: 44px; height: 44px; border-radius: 12px; background: linear-gradient(135deg, var(--taken), var(--down)); color: #08101f; font-weight: 800; font-size: 22px; display: grid; place-items: center; }
+  .modnum .title { font-size: 13px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+  .prompt { background: #0a0f20; border: 1px solid var(--line); border-left: 4px solid var(--missed); border-radius: 12px; padding: 16px 18px; }
+  .prompt .lab { font-size: 11.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--missed); font-weight: 800; margin-bottom: 8px; display: flex; justify-content: space-between; gap: 8px; }
+  .prompt .lab span:last-child { color: var(--dim); }
+  .prompt q { quotes: none; display: block; font-size: 15.5px; line-height: 1.5; color: var(--ink); }
+  .finding h3 { font-size: 20px; line-height: 1.25; margin-bottom: 8px; }
+  .finding .meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; align-items: center; }
+  .viz { margin: 14px 0 4px; }
+  svg { max-width: 100%; height: auto; display: block; }
   svg text { font-family: inherit; }
-  .chart { width: 100%; height: auto; display: block; }
-  .readout { min-height: 24px; font-size: 15px; color: var(--muted); margin-top: 6px; }
-  .readout b { color: var(--ink); }
-  .legend { display: flex; gap: 18px; flex-wrap: wrap; font-size: 14px; color: var(--muted); margin-bottom: 6px; }
-  .legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+  .axis text { font-size: 11px; fill: var(--dim); }
+  .grid-line { stroke: #222c52; stroke-width: 1; }
+  .lbl { font-size: 12.5px; fill: var(--ink); font-weight: 600; }
+  .lbl.m { fill: var(--muted); font-weight: 500; }
+  details.nums { margin-top: 10px; font-size: 13px; color: var(--muted); }
+  details.nums summary { cursor: pointer; }
+  details.nums table { border-collapse: collapse; margin-top: 8px; }
+  details.nums td, details.nums th { padding: 3px 12px 3px 0; text-align: left; font-weight: 400; }
+  details.nums th { color: var(--ink); font-weight: 600; }
 
-  .bar-row { display: grid; grid-template-columns: 150px 1fr 70px; align-items: center; gap: 10px; margin: 8px 0; font-size: 14.5px; }
-  .bar-row .lab { color: var(--muted); } .bar-row .val { text-align: right; font-weight: 700; }
-  .track { height: 14px; background: rgba(154,165,200,.12); border-radius: 8px; overflow: hidden; position: relative; }
-  .fill { position: absolute; left: 0; top: 0; bottom: 0; width: 0; border-radius: 8px; transition: width 1s cubic-bezier(.2,.8,.2,1); }
-  .slide.in .fill { width: var(--w); }
-  .pair { margin: 12px 0; } .pair .nm { font-weight: 700; font-size: 15px; margin-bottom: 4px; } .pair .nm span { color: var(--dim); font-weight: 400; font-size: 13px; margin-left: 6px; }
-  .pair .line { display: grid; grid-template-columns: 54px 1fr 54px; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); margin: 3px 0; }
-  .loss { display: flex; height: 54px; border-radius: 12px; overflow: hidden; margin: 14px 0 8px; }
-  .loss div { display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 20px; width: 0; transition: width 1.1s cubic-bezier(.2,.8,.2,1); white-space: nowrap; overflow: hidden; }
-  .slide.in .loss div { width: var(--w); }
+  .tiles { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
+  .tile { background: var(--panel2); border: 1px solid var(--line); border-radius: 12px; padding: 12px 10px; text-align: center; font-size: 13px; }
+  .tile b { display: block; font-size: 22px; margin-bottom: 2px; }
+  .tile.hot { border-color: var(--missed); }
+  .timeline { position: relative; height: 58px; margin: 18px 4px 6px; }
+  .timeline .bar { position: absolute; left: 0; right: 0; top: 24px; height: 8px; border-radius: 4px; background: linear-gradient(90deg, var(--taken) 0 63%, var(--missed) 63% 100%); }
+  .timeline .mark { position: absolute; top: 0; font-size: 12px; color: var(--muted); transform: translateX(-50%); text-align: center; white-space: nowrap; }
+  .timeline .mark::after { content: ""; display: block; width: 2px; height: 18px; background: var(--ink); margin: 2px auto 0; opacity: .6; }
+  .timeline .end { position: absolute; top: 38px; font-size: 12px; color: var(--dim); }
 
-  /* score sim */
-  .meter { position: relative; height: 40px; background: rgba(154,165,200,.12); border-radius: 12px; overflow: hidden; margin: 10px 0; }
-  .meter .lvl { position: absolute; left: 0; top: 0; bottom: 0; width: 50%; background: linear-gradient(90deg, var(--bad), var(--missed), var(--good)); background-size: 200% 100%; transition: width .35s; }
-  .meter .neutral { position: absolute; top: 0; bottom: 0; left: 50%; width: 2px; background: #fff; opacity: .6; }
-  .meter .num { position: absolute; right: 12px; top: 8px; font-weight: 800; }
-  .sim-btns { display: flex; gap: 10px; flex-wrap: wrap; margin: 12px 0; }
+  .twoends { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .pile { background: var(--panel2); border-radius: 12px; padding: 14px; }
+  .pile h4 { margin: 0 0 10px; font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  .row { display: flex; align-items: center; gap: 10px; margin: 8px 0; font-size: 14px; }
+  .row .nm { width: 108px; flex: none; color: var(--muted); }
+  .row .track { display: block; flex: 1; height: 14px; background: #0f1630; border-radius: 7px; overflow: hidden; }
+  .row .fill { display: block; height: 100%; border-radius: 7px; transition: width 1s cubic-bezier(.2,.7,.2,1); width: 0; }
+  .row .v { width: 56px; text-align: right; font-variant-numeric: tabular-nums; font-weight: 700; }
+  .quote { border-left: 3px solid var(--bad); padding: 4px 0 4px 14px; margin: 14px 0 0; color: var(--ink); font-style: italic; font-size: 15px; }
+
+  /* score lab */
+  .lab-controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 4px 0 8px; }
+  .lab-controls button, .seg button { background: var(--panel2); border: 1px solid var(--line); border-radius: 999px; padding: 6px 12px; cursor: pointer; font-size: 13.5px; }
+  .lab-controls button:hover, .seg button:hover { border-color: var(--taken); }
+  .lab-controls button.on, .seg button.on { background: var(--taken); border-color: var(--taken); color: #08101f; font-weight: 700; }
   input[type=range] { width: 100%; accent-color: var(--missed); }
-  .code { background: #0a0f1d; border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; font-size: 13.5px; line-height: 1.55; overflow-x: auto; white-space: pre; }
-  .code .c { color: var(--dim); } .code .g { color: var(--good); } .code .r { color: var(--bad); }
+  .readout { background: var(--panel2); border-radius: 12px; padding: 12px 14px; font-size: 15px; min-height: 66px; }
+  .readout b { color: var(--missed); }
 
-  /* module explorer */
-  .rail { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin-bottom: 18px; }
-  .tab { font: inherit; text-align: left; background: var(--panel); color: var(--muted); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; cursor: pointer; line-height: 1.25; }
-  .tab b { display: block; color: var(--ink); font-size: 14px; }
-  .tab small { font-size: 12px; }
-  .tab[aria-selected="true"] { border-color: var(--missed); background: var(--panel2); box-shadow: 0 0 0 1px var(--missed) inset; }
-  .tab[aria-selected="true"] b { color: var(--missed); }
-  .prompt { background: #0a0f1d; border: 1px solid var(--line); border-left: 4px solid var(--violet); border-radius: 12px; padding: 16px 18px; font-size: 16px; white-space: pre-wrap; }
-  .prompt .who { display: block; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--violet); font-weight: 700; margin-bottom: 6px; }
-  .finding { border-left: 4px solid var(--good); }
-  .finding .who { color: var(--good); }
-  .mod-vis { margin-top: 14px; }
-  .chip { display: inline-block; background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; padding: 4px 10px; margin: 3px 4px 3px 0; font-size: 13px; }
-  .person { display: inline-block; width: 38px; height: 38px; border-radius: 50%; margin-right: 8px; background: rgba(154,165,200,.18); }
-  .person.on { background: var(--missed); }
-  table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
-  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
-  th { color: var(--muted); font-weight: 600; font-size: 13px; }
+  /* brief flow */
+  .flow { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; gap: 10px; align-items: stretch; margin-top: 8px; }
+  .step { background: var(--panel2); border: 1px solid var(--line); border-radius: 12px; padding: 12px; font-size: 13.5px; }
+  .step .hd { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--dim); margin-bottom: 6px; font-weight: 700; }
+  .qbadge { display: inline-block; background: var(--missed); color: #2a1a00; font-weight: 800; font-size: 12px; padding: 2px 9px; border-radius: 999px; }
+  .okbadge { display: inline-block; background: var(--good); color: #052415; font-weight: 800; font-size: 12px; padding: 2px 9px; border-radius: 999px; }
+  .fl-arrow { align-self: center; color: var(--dim); font-size: 22px; }
+  .phone { background: #0a0f20; border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; font-size: 13px; color: var(--ink); }
 
-  /* prototype */
-  .frame { border: 1px solid var(--line); border-radius: 18px; overflow: hidden; background: #f4f5f7; }
-  .frame iframe { width: 100%; height: 690px; border: 0; display: block; }
-  .steps { counter-reset: s; list-style: none; padding: 0; margin: 0; }
-  .steps li { counter-increment: s; display: grid; grid-template-columns: 30px 1fr; gap: 10px; margin: 10px 0; font-size: 15.5px; }
-  .steps li::before { content: counter(s); width: 28px; height: 28px; border-radius: 50%; background: var(--missed); color: #1b1300; font-weight: 800; display: grid; place-items: center; font-size: 14px; }
+  /* cause slide */
+  .causegrid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .crow { display: grid; grid-template-columns: 210px 1fr 40px; gap: 10px; align-items: center; margin: 10px 0; font-size: 14.5px; }
+  .crow .track { display: block; height: 16px; background: #0f1630; border-radius: 8px; overflow: hidden; }
+  .crow .fill { display: block; height: 100%; width: 0; border-radius: 8px; background: linear-gradient(90deg, var(--taken), var(--down)); transition: width 1s cubic-bezier(.2,.7,.2,1); }
+  .crow .v { text-align: right; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .settle { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+  .settle span { background: var(--panel2); border: 1px solid var(--line); border-radius: 999px; padding: 5px 12px; font-size: 13.5px; color: var(--muted); }
 
-  /* skill */
-  .toggle { display: inline-flex; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 4px; margin-bottom: 14px; }
-  .toggle button { font: inherit; font-weight: 600; font-size: 14px; border: 0; background: transparent; color: var(--muted); padding: 8px 14px; border-radius: 9px; cursor: pointer; }
-  .toggle button[aria-pressed="true"] { background: var(--missed); color: #1b1300; }
-  .verdict { font-size: 20px; font-weight: 800; margin: 4px 0 10px; }
-  .res { display: inline-block; min-width: 62px; text-align: center; font-weight: 800; font-size: 13px; padding: 3px 8px; border-radius: 8px; }
-  .res.Pass { background: rgba(61,220,151,.18); color: var(--good); } .res.Partial { background: rgba(255,176,32,.18); color: var(--missed); }
-  .res.Fail { background: rgba(255,93,108,.18); color: var(--bad); } .res.NA { background: rgba(154,165,200,.16); color: var(--muted); }
+  /* prototype slide */
+  .protogrid { display: grid; grid-template-columns: 320px 1fr; gap: 22px; align-items: start; }
+  .tour { display: grid; gap: 8px; }
+  .tour button { text-align: left; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; cursor: pointer; font-size: 14.5px; display: grid; grid-template-columns: 28px 1fr; gap: 8px; align-items: center; }
+  .tour button:hover { border-color: var(--missed); }
+  .tour button i { font-style: normal; width: 26px; height: 26px; border-radius: 50%; background: var(--missed); color: #2a1a00; font-weight: 800; display: grid; place-items: center; font-size: 13px; }
+  .tour small { display: block; color: var(--dim); font-size: 12.5px; }
+  .frame { border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: #fff; box-shadow: 0 18px 50px rgba(0,0,0,.45); }
+  .frame .bar { background: #1b2342; color: var(--muted); font-size: 12px; padding: 7px 12px; display: flex; justify-content: space-between; gap: 8px; }
+  .frame iframe { width: 100%; height: 540px; border: 0; display: block; background: #f4f5f7; }
+  .promise { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 14px; }
+  .promise div { font-size: 13.5px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; color: var(--muted); }
+  .promise b { color: var(--ink); display: block; margin-bottom: 2px; }
 
-  .conf-row { display: grid; grid-template-columns: minmax(180px, 330px) 1fr 44px; gap: 12px; align-items: center; margin: 7px 0; font-size: 14.5px; }
-  .conf-row .val { font-weight: 800; text-align: right; }
+  /* skill slide */
+  .skillgrid { display: grid; grid-template-columns: 1.15fr .85fr; gap: 24px; }
+  .tests { display: grid; gap: 10px; margin-top: 10px; }
+  .test { display: grid; grid-template-columns: 28px 1fr 74px; gap: 12px; align-items: center; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; transition: border-color .4s; }
+  .test .no { font-weight: 800; color: var(--dim); }
+  .test .ev { font-size: 13.5px; color: var(--muted); }
+  .test .nm { font-weight: 700; font-size: 15px; }
+  .verdict { text-align: center; padding: 5px 0; border-radius: 8px; font-weight: 800; font-size: 13px; transition: background .4s, color .4s; }
+  .v-Pass { background: rgba(61,220,151,.18); color: var(--good); }
+  .v-Partial { background: rgba(255,176,32,.18); color: var(--missed); }
+  .v-Fail { background: rgba(255,107,122,.2); color: var(--bad); }
+  .seg { display: flex; gap: 8px; margin-bottom: 4px; flex-wrap: wrap; }
+  .map { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .map th { text-align: left; font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--dim); padding: 0 8px 8px 0; }
+  .map td { padding: 9px 12px 9px 0; border-top: 1px solid var(--line); vertical-align: top; color: var(--muted); }
+  .map td b { color: var(--ink); }
+  .guard { display: grid; gap: 8px; margin-top: 10px; }
+  .guard div { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; font-size: 14px; color: var(--muted); }
+  .guard b { color: var(--ink); }
 
-  @media (max-width: 900px) {
-    .g2, .g3, .g4 { grid-template-columns: 1fr; }
-    .timeline { grid-template-columns: 1fr; } .timeline::before { display: none; }
-    .tl { padding: 0 0 0 30px; } .tl::before { top: 3px; }
-    .rail { grid-template-columns: repeat(2, 1fr); }
-    .hero-stats { grid-template-columns: 1fr; }
-    .bar-row { grid-template-columns: 110px 1fr 56px; }
-    #dots, #hint { display: none; }
-    .slide { padding: 48px 20px 44px; }
-    .conf-row { grid-template-columns: 1fr 44px; } .conf-row .track { grid-column: 1 / -1; order: 3; }
-    .frame iframe { height: 760px; }
+  .three { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .three .card h3 { margin-bottom: 10px; }
+  .three ul { margin: 0; padding-left: 18px; color: var(--muted); font-size: 15px; }
+  .three li { margin: 6px 0; }
+  .three li b { color: var(--ink); }
+
+  #tip { position: fixed; z-index: 100; pointer-events: none; background: #05091a; border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; font-size: 13px; opacity: 0; transition: opacity .1s; max-width: 260px; }
+
+  @media (max-width: 960px) {
+    #s-title .inner, .modgrid, .protogrid, .skillgrid, .causegrid { grid-template-columns: 1fr; }
+    .beats, .three { grid-template-columns: 1fr 1fr; }
+    .tiles { grid-template-columns: repeat(3, 1fr); }
+    .twoends, .promise { grid-template-columns: 1fr; }
+    #dots { display: none; }
+    .flow { grid-template-columns: 1fr; } .fl-arrow { transform: rotate(90deg); justify-self: center; }
   }
-    #protogrid { }
-  @media (max-width: 900px) { #protogrid { grid-template-columns: 1fr !important; } }
-  @media (prefers-reduced-motion: reduce) {
-    html { scroll-behavior: auto; }
-    .rv, .fill, .loss div, .meter .lvl { transition: none; }
-    .rv { opacity: 1; transform: none; }
-  }
+  @media (max-width: 600px) { .beats, .three { grid-template-columns: 1fr; } .crow { grid-template-columns: 120px 1fr 44px; } }
+  @media (prefers-reduced-motion: reduce) { .ring { animation: none; } html { scroll-behavior: auto; } .fill, .verdict { transition: none; } }
+  @media print { .slide { min-height: auto; page-break-after: always; } #dots, #progress, #counter { display: none; } }
 </style>
 </head>
 <body>
 <div id="progress"></div>
 <nav id="dots" aria-label="Slides"></nav>
-<div id="hint">← → or ↑ ↓ to move</div>
+<div id="counter" aria-live="polite"></div>
+<div id="tip" role="tooltip"></div>
 
-<!-- 1. TITLE -->
-<section class="slide" data-title="Release 4.2">
+<!-- 1 TITLE -->
+<section class="slide" id="s-title" data-title="Title">
   <div class="inner">
-    <p class="kicker rv">Rook Dispatch · Final report · 20 Oct 2026</p>
-    <h1 class="rv">One release.<br>One in five offers<br>stopped being answered.</h1>
-    <p class="lede rv">On 12 August Release 4.2 shipped with three changes. From that morning, responders missed far more offers, and four of them nearly stopped hearing from us. This is what happened, how I know, what I'd ship to fix it, and the check that keeps the next brief honest.</p>
-    <div class="hero-stats rv">
-      <div><div class="big"><span class="from">76.6%</span><span class="arrow">→</span><span class="to t">64.0%</span></div><div class="stat-label">of pings taken, before vs after 12 Aug</div></div>
-      <div><div class="big"><span class="from">2.3%</span><span class="arrow">→</span><span class="to m">18.0%</span></div><div class="stat-label">of pings missed (no answer in time)</div></div>
-    </div>
-    <p class="src">Database <code>pings</code>, 29 Jun to 6 Sep 2026 (44 days before, 26 after). Data stops six weeks ago; I can't say what it looks like today.</p>
-  </div>
-</section>
-
-<!-- 2. WHAT HAPPENED -->
-<section class="slide" data-title="What happened">
-  <div class="inner">
-    <p class="kicker rv">The plain version</p>
-    <h2 class="rv">Offers began timing out, and one group of responders couldn't climb back.</h2>
-    <div class="timeline rv">
-      <div class="tl"><div class="d">12 Aug · 09:04</div><p>4.2 ships. First missed ping that morning. Missed pings that day: 28%, against 0–5% a day before.</p></div>
-      <div class="tl"><div class="d">12 Aug · 15:41</div><p>First “offer vanished” ticket, seven hours after the first miss.</p></div>
-      <div class="tl red"><div class="d">14–15 Aug</div><p>Four responders' pings stop: Farlight, The Undertow, Vesper, Meteor Mite.</p></div>
-      <div class="tl red"><div class="d">17 Aug</div><p>First “phone's gone quiet” ticket. Ticket volume goes from 5–8 a week to 20–32.</p></div>
-      <div class="tl"><div class="d">6 Sep</div><p>Last data. Taken is back to 73%, misses still 5× the old rate.</p></div>
-    </div>
-    <div class="grid g3">
-      <div class="card rv"><h3>1 · Change</h3><p style="margin:0;color:var(--muted)">4.2 shortened the wait for an answer from <b style="color:var(--ink)">90s to 60s</b>, shifted ranking toward proximity, and made console filters stick. The two routing briefs were one sentence each, with no goal.</p></div>
-      <div class="card rv"><h3>2 · Effect</h3><p style="margin:0;color:var(--muted)">Misses rose in <b style="color:var(--ink)">all 16 responders, all 15 areas, every time of day</b>. Callouts nobody took doubled, 5.5% to 11.1%. Refusals held roughly steady (21% → 18%).</p></div>
-      <div class="card rv"><h3>3 · Trap</h3><p style="margin:0;color:var(--muted)">In the code a <b style="color:var(--ink)">miss costs the same as a “no” (−0.12)</b>, only a yes gives points back (+0.08), and scores never fade. Four responders slid and stayed there.</p></div>
-    </div>
-    <p class="src">Sources: <code>pings</code>, <code>support_tickets</code>, <code>00-rook/4-2-impact-analysis.md</code>, <code>history.py</code> and <code>config.py</code>. Priya's view was “mostly seasonal, back in September”. The data doesn't support that (slide 6).</p>
-  </div>
-</section>
-
-<!-- 3. WEEKLY CHART -->
-<section class="slide" data-title="The step">
-  <div class="inner">
-    <p class="kicker rv">The numbers</p>
-    <h2 class="rv">A step on release morning, not a slow August slide.</h2>
-    <p class="lede rv">Six flat weeks, then a drop that starts the day 4.2 shipped. Support tickets move with it. Hover the chart to read any week.</p>
-    <div class="card rv">
-      <div class="legend"><span><i style="background:var(--taken)"></i>Taken %</span><span><i style="background:var(--missed)"></i>Missed %</span><span><i style="background:var(--bad)"></i>Support tickets filed (bars, per week)</span></div>
-      <svg id="weekly" class="chart" viewBox="0 0 760 360" role="img" aria-label="Weekly percent of pings taken and missed, and support tickets per week, 29 June to 31 August"></svg>
-      <div class="readout" id="weekly-read">Move over the chart to read a week.</div>
-    </div>
-    <p class="src">Weeks start Monday. The week of 10 Aug holds 2 days before 4.2 and 5 after, so it's a blend. The CSV matches the database exactly, so it's one source, not two.</p>
-  </div>
-</section>
-
-<!-- 4. WHO -->
-<section class="slide" data-title="Who was hit">
-  <div class="inner">
-    <p class="kicker rv">Who it hit</p>
-    <h2 class="rv">Two thirds a wide slide, one third four responders gone quiet.</h2>
-    <div class="grid g2">
-      <div class="card rv">
-        <h3>Where the 12.6-point fall in “taken” came from</h3>
-        <div class="loss"><div style="--w:62%;background:var(--taken);color:#04162e">≈ 8 pts</div><div style="--w:38%;background:var(--bad);color:#2a0409">≈ 5 pts</div></div>
-        <div style="display:flex;justify-content:space-between;font-size:14px;color:var(--muted)"><span><b style="color:var(--taken)">12 responders</b> who didn't go quiet: 77.0% → 68.1% taken</span><span style="text-align:right"><b style="color:var(--bad)">The four</b>: 75.5% → 23.2% taken</span></div>
-        <p style="color:var(--muted);font-size:14px;margin-top:14px">Missed went 2.1% → 13.9% for the twelve, and 2.9% → 58.9% for the four (56 pings, so a small sample). The two shares overlap a little.</p>
-      </div>
-      <div class="card rv">
-        <h3>Pings per day, before → after 4.2</h3>
-        <div id="pairs"></div>
-        <p style="color:var(--muted);font-size:14px;margin:12px 0 0">Meteor Mite and The Gale share Eastgate and the same handler, Kip. One lost two thirds of its work, the other gained 42%.</p>
+    <div>
+      <p class="kicker">Rook Dispatch · Final report</p>
+      <h1>Release 4.2: what happened, and how we stop a repeat.</h1>
+      <p class="lede">A shorter wait on every offer, a penalty that never fades, and four responders who quietly stopped getting work. Here is the evidence, the exact prompts that found it, the fix I prototyped, and the skill that guards the next brief.</p>
+      <p class="byline">Yanita, Dispatch PM · 2 Nov 2026 · Rook Industries is a fictional teaching scenario</p>
+      <div class="chips">
+        <span class="chip"><b>6</b> modules</span>
+        <span class="chip"><b>74</b> prompts I wrote</span>
+        <span class="chip"><b>1</b> prototype · <b>1</b> brief · <b>3</b> skills</span>
       </div>
     </div>
-    <p class="src">Ashgrove and Halfmoon are also quieter, but their areas' demand fell ~30%, so that looks like demand, not the same problem. Vesper and Meteor Mite filed no tickets at all; their handlers raised it in interviews.</p>
+    <svg class="radar" id="radar" viewBox="0 0 400 400" role="img" aria-label="Sixteen responders; twelve still answer pings, four have gone quiet."></svg>
   </div>
 </section>
 
-<!-- 5. MECHANISM -->
-<section class="slide" data-title="The score trap">
+<!-- 2 SHORT VERSION -->
+<section class="slide" id="s-short" data-title="What happened">
   <div class="inner">
-    <p class="kicker rv">The mechanism (from code)</p>
-    <h2 class="rv">Every miss costs more than a yes earns, and nothing ever resets.</h2>
-    <div class="grid g2">
-      <div class="rv">
-        <div class="code"><span class="c"># history.py · config.py</span>
-<span class="g">record_accepted:</span>  score + <span class="g">0.08</span>
-<span class="r">record_declined:</span>  score − <span class="r">0.12</span>
-<span class="c">  "…or we ran out of time waiting.
-   Same either way."</span>
-<span class="c"># TODO(2019): ease back toward neutral?
-# "Leaving it as-is for now."</span></div>
-        <ul class="tight">
-          <li>Start at <b>0.5</b> (neutral), floor 0, ceiling 1.</li>
-          <li><b>Break-even failure rate is 40%</b>: above it, the score drifts down.</li>
-          <li>Average failure went from ~23% to ~36%, so ordinary responders are close to the edge.</li>
-          <li>From 0 it takes ~7 yeses in a row to reach neutral.</li>
-        </ul>
-      </div>
-      <div class="card rv">
-        <h3>Try it: one responder's score</h3>
-        <div class="meter" aria-live="polite"><div class="lvl" id="lvl"></div><div class="neutral"></div><div class="num" id="num">0.50</div></div>
-        <div class="sim-btns">
-          <button class="btn" id="b-yes">Yes  +0.08</button>
-          <button class="btn" id="b-miss">Missed  −0.12</button>
-          <button class="btn" id="b-no">Turned down  −0.12</button>
-          <button class="btn" id="b-reset">Reset</button>
-        </div>
-        <label for="fr" style="font-size:14px;color:var(--muted)">Or replay 30 pings at a steady failure rate: <b id="frv" style="color:var(--ink)">36%</b></label>
-        <input type="range" id="fr" min="0" max="100" value="36" aria-label="Failure rate">
-        <div class="sim-btns"><button class="btn primary" id="b-run">Run 30 pings</button></div>
-        <svg id="trace" class="chart" viewBox="0 0 400 90" role="img" aria-label="Score over 30 pings"></svg>
-        <div class="readout" id="sim-read">Toy replay of the rules, not real scores.</div>
-      </div>
+    <p class="kicker">The short version</p>
+    <h2>What happened, in four beats.</h2>
+    <p class="lede">Data runs 29 Jun to 6 Sep 2026, so everything below is a picture of <b>early September</b>. Today is 2 Nov.</p>
+    <div class="beats">
+      <div class="beat"><div class="n">1 · 12 AUG</div><div class="big">6 changes</div><p>4.2 shipped six changes at once. Two matter most: the wait for an answer went from 90s to 60s, and ranking leaned harder on distance.</p></div>
+      <div class="beat"><div class="n">2 · THE SPIKE</div><div class="big"><span data-count="2.3" data-dec="1">2.3</span>% → <span data-count="18" data-dec="0">18</span>%</div><p>Offers that nobody answered ("missed") jumped on release morning. Offers taken fell from 76.6% to 64.0%. Refusals barely moved.</p></div>
+      <div class="beat"><div class="n">3 · THE FOUR</div><div class="big">3 of 40</div><p>Farlight, The Undertow, Vesper and Meteor Mite took 3 of 40 first pings after 4.2, against 175 of 247 before. They are about one third of the damage; the other twelve, about two thirds.</p></div>
+      <div class="beat"><div class="n">4 · THE ROOT</div><div class="big">1 line</div><p>Both 4.2 briefs were a single sentence with no goal and no success measure. Engineering built them exactly as written, and nobody saw how they would interact.</p></div>
     </div>
-    <p class="src">My replay of the code on the ping history puts the four near 0 by early September, but real scores aren't in the database. Between 19 Aug and 6 Sep the four were still pinged about once a day: 20 pings, 15 missed, 4 turned down, 1 taken. The blocker is answering when asked, not being asked.</p>
+    <p class="src">Sources: pings table (database), <span class="mono">00-rook/4-2-impact-analysis.md</span>, CLAUDE.md (Modules 1, 3 and 4). Counts are observed; the cause is not yet proven (slide 9).</p>
   </div>
 </section>
 
-<!-- 6. CONFIDENCE -->
-<section class="slide" data-title="How sure am I">
+<!-- 3 MODULE 1 -->
+<section class="slide" id="s-m1" data-title="Module 1">
   <div class="inner">
-    <p class="kicker rv">What's proven, what isn't</p>
-    <h2 class="rv">Counts are solid. Causes are not.</h2>
-    <div class="grid g2">
-      <div class="card rv"><div id="conf"></div><p style="font-size:13px;color:var(--dim);margin:10px 0 0">Confidence 0–95, my scoring in <code>4-2-impact-analysis.md</code>.</p></div>
+    <div class="modgrid">
       <div>
-        <div class="card rv" style="margin-bottom:18px">
-          <h3>I changed my mind on the timeout</h3>
-          <p style="margin:0;color:var(--muted)">In Module 1 I read the timeout cut (90s → 60s) as “very likely the main mechanism”. In Module 3 I dropped it from 70 to 40: <b style="color:var(--ink)">no refusal ever took longer than 40 seconds</b>, before or after, so a quick “no” didn't need more time. A slow “yes” still might. Nobody has seen yes-answer times.</p>
+        <div class="modnum"><div class="badge">1</div><div class="title">Origin Story · 3 prompts</div></div>
+        <h2>First, find out what I can even reach.</h2>
+        <div class="prompt"><div class="lab"><span>My prompt</span><span>#2 of 3</span></div>
+          <q>What can you reach from here? List what's in this folder, what's in Rook's wiki, and what tables are in Rook's database.</q></div>
+      </div>
+      <div class="card finding">
+        <span class="tag obs">Observed · database + wiki</span>
+        <h3>Five tables, ten weeks of data, and one column that is missing.</h3>
+        <p style="color:var(--muted);font-size:15px">The database covers 29 Jun to 6/7 Sep. The <b>pings</b> table records taken, turned down or missed, but has <b>no answer-time column</b>, so "was 60 seconds too short?" cannot be tested directly.</p>
+        <div class="tiles viz">
+          <div class="tile"><b>callouts</b>incidents</div>
+          <div class="tile hot"><b>pings</b>every offer</div>
+          <div class="tile"><b>responders</b>16 people</div>
+          <div class="tile"><b>handlers</b>console users</div>
+          <div class="tile"><b>support_tickets</b>147 rows</div>
         </div>
-        <div class="card rv">
-          <h3>Seasonality is a weak fit</h3>
-          <p style="margin:0;color:var(--muted)">Six flat weeks come before, the step starts at 09:04 on release day, and a 15% dip in demand should lower ping counts, not raise the missed share. No prior-year data to test it directly.</p>
+        <div class="timeline" aria-label="Timeline: data from 29 June to 7 September, release on 12 August">
+          <div class="bar"></div>
+          <div class="mark" style="left:0%;transform:none;text-align:left">29 Jun</div>
+          <div class="mark" style="left:63%">12 Aug · 4.2</div>
+          <div class="mark" style="left:100%;transform:translateX(-100%);text-align:right">7 Sep</div>
+          <div class="end" style="left:0">6 weeks before</div><div class="end" style="right:0">~4 weeks after</div>
         </div>
+        <p class="src">Wiki pages reachable: Releases, Q3 roadmap, Team directory, Research (4 interviews). Module 1 has no session notes, so the link from this prompt to this finding is by topic and order, not by a saved transcript.</p>
       </div>
     </div>
-    <p class="src">Missing and who has it: yes-answer times and push logs (engineering manager), real scores and ranks (staff engineer), anything after 6 Sep (engineering manager).</p>
   </div>
 </section>
 
-<!-- 7. MODULES -->
-<section class="slide" data-title="Six modules">
+<!-- 4 MODULE 2 -->
+<section class="slide" id="s-m2" data-title="Module 2">
   <div class="inner">
-    <p class="kicker rv">The work, module by module</p>
-    <h2 class="rv">One finding, and the exact prompt I wrote for it.</h2>
-    <div class="rail" id="rail" role="tablist" aria-label="Modules"></div>
-    <div class="grid g2" id="mod">
+    <div class="modgrid">
+      <div>
+        <div class="modnum"><div class="badge">2</div><div class="title">Super Hearing · 6 prompts</div></div>
+        <h2>The tickets said something the interviews could not.</h2>
+        <div class="prompt"><div class="lab"><span>My prompt</span><span>#5 of 6</span></div>
+          <q>lets bring in the ticket data next</q></div>
+        <p class="src" style="margin-top:12px">Six words. It worked because the four interviews were already read, so the tickets could be set against them.</p>
+      </div>
+      <div class="card finding">
+        <span class="tag obs">Observed · support_tickets (147 read) + 4 interviews</span>
+        <h3>Same problem from two ends: handlers say "offers vanish", the tickets say "phones go quiet".</h3>
+        <div class="twoends viz">
+          <div class="pile"><h4>Interviews · 4 handlers</h4>
+            <div class="row"><span class="nm">Offers vanish</span><span class="track"><span class="fill" data-w="75" style="background:var(--down)"></span></span><span class="v">3 of 4</span></div>
+            <div class="row"><span class="nm">Need alerts</span><span class="track"><span class="fill" data-w="75" style="background:var(--down)"></span></span><span class="v">3 of 4</span></div>
+            <div class="row"><span class="nm">Uneven work</span><span class="track"><span class="fill" data-w="50" style="background:var(--down)"></span></span><span class="v">2 of 4</span></div>
+          </div>
+          <div class="pile"><h4>Tickets · 147, since 4.2</h4>
+            <div class="row"><span class="nm">Phone quiet</span><span class="track"><span class="fill" data-w="100" style="background:var(--missed)"></span></span><span class="v">32</span></div>
+            <div class="row"><span class="nm">Offer vanished</span><span class="track"><span class="fill" data-w="41" style="background:var(--missed)"></span></span><span class="v">13</span></div>
+            <div class="row"><span class="nm">Before 4.2</span><span class="track"><span class="fill" data-w="0.5" style="background:var(--good)"></span></span><span class="v">0</span></div>
+          </div>
+        </div>
+        <p class="quote">"starting to wonder if im still even in the system."<br><small style="font-style:normal;color:var(--dim)">A responder, in one of the 32 "quiet" tickets</small></p>
+        <p class="src">None of the 45 routing tickets predates 12 Aug, and all 45 are open. Only one interviewee also filed a ticket, so the piles barely overlap. Nobody files a ticket about being too busy, so the swamped end is invisible here.</p>
+      </div>
     </div>
-    <p class="src">Prompts are copied word for word from each module's <code>prompts.md</code>, typos included.</p>
   </div>
 </section>
 
-<!-- 8. PROTOTYPE -->
-<section class="slide" data-title="The fix">
+<!-- 5 MODULE 3 -->
+<section class="slide" id="s-m3" data-title="Module 3">
   <div class="inner">
-    <p class="kicker rv">The fix, as a prototype</p>
-    <h2 class="rv">Make going quiet visible, and give the handler one action.</h2>
-    <div class="grid" style="grid-template-columns: 330px 1fr; align-items: start;" id="protogrid">
-      <div class="rv">
-        <ol class="steps">
-          <li><span>In <b>Kip's console</b> a <span class="pill missed">Quiet</span> banner marks Meteor Mite: 4 pings this week against 11 usual.</span></li>
-          <li><span>Click <b>Check in</b> (or the banner's Review). Tick that you've confirmed they're available.</span></li>
-          <li><span>Confirm. Standing resets to neutral, and a line lands in the override log.</span></li>
-          <li><span>Switch to <b>Meteor Mite's phone</b>: “You're still on the list.”</span></li>
-        </ol>
-        <div class="card flat" style="padding:14px;margin-top:16px;border-style:dashed">
-          <p style="margin:0 0 8px;font-size:14px"><b>What the brief changes</b></p>
-          <ul class="tight" style="margin:0;font-size:14px">
-            <li>A miss costs less than a refusal; scores ease back toward neutral, never above.</li>
-            <li>Handler sees <b>Quiet</b> with evidence, plus <b>Check in</b>.</li>
-            <li>Responder is told they're still on the list.</li>
-          </ul>
-          <p style="margin:10px 0 0;font-size:14px"><b>It doesn't</b> promise offers, touch the 60s wait or proximity weights, or fix the wider miss spike. That's about <b>one third</b> of the fall.</p>
+    <div class="modgrid">
+      <div>
+        <div class="modnum"><div class="badge">3</div><div class="title">Rewind · 17 prompts</div></div>
+        <h2>Flat for six weeks, then a step down on release week.</h2>
+        <div class="prompt"><div class="lab"><span>My prompt</span><span>#1 of 17</span></div>
+          <q>Open 00-rook/data/callout-history.csv. Every row is one responder in one week: how many times we pinged them, and how many of those they took. Release 4.2 shipped on 12 August. Tell me what changed after that date. Show me the weekly numbers before and after, and show me the rows you used to get them.</q></div>
+      </div>
+      <div class="card finding">
+        <span class="tag obs">Observed · callout-history.csv (160 rows) · high confidence</span>
+        <h3>Share of pings taken: 75–78% a week until 4.2, then 54%, 66%, 67%, 73%. Recovering, not recovered.</h3>
+        <div class="viz" id="chart-weekly"></div>
+        <details class="nums"><summary>Show the numbers</summary>
+          <table><tr><th>Week</th><th>Taken</th></tr>
+          <tr><td>29 Jun to 3 Aug (six weeks)</td><td>75.0–77.9%, average 76.8% (794 of 1,034)</td></tr>
+          <tr><td>10 Aug (release week)</td><td>54.2%</td></tr><tr><td>17 Aug</td><td>65.8%</td></tr>
+          <tr><td>24 Aug</td><td>66.7%</td></tr><tr><td>31 Aug</td><td>72.7%</td></tr></table></details>
+        <p class="src"><span class="tag gap">Corrected later</span> My first chat answer said four responders were "most of the damage". The re-run shows about one third (see slide 9). The CSV also matches the database exactly, so it is the same evidence, not a second source.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 6 MODULE 4 -->
+<section class="slide" id="s-m4" data-title="Module 4">
+  <div class="inner">
+    <div class="modgrid">
+      <div>
+        <div class="modnum"><div class="badge">4</div><div class="title">X-Ray Vision · 11 prompts</div></div>
+        <h2>One line takes points off. One line puts them back. Nothing fades.</h2>
+        <div class="prompt"><div class="lab"><span>My prompt</span><span>#7 of 11</span></div>
+          <q>Find me the part of this code that takes points off somebody when they miss a ping or turn one down. Show it to me and explain it in plain English. Then find me every single thing in this code that puts points back on.</q></div>
+        <p class="src" style="margin-top:12px">The answer: a "yes" adds 0.08; a "no" <i>or a miss</i> takes off 0.12 (<span class="mono">history.py</span>, <span class="mono">config.py</span>). No decay, no reset, no bonus. Prompt #11 then asked what the code does <i>not</i> do.</p>
+      </div>
+      <div class="card finding">
+        <span class="tag inf">Inferred · replay of the code's rules, not real scores</span>
+        <h3>Anyone who fails more than 40% of offers slides to the floor.</h3>
+        <div class="lab-controls" id="presets"></div>
+        <div id="chart-score" class="viz"></div>
+        <label for="fail" style="font-size:13.5px;color:var(--muted)">Failure rate (misses + refusals): <b id="failv" style="color:var(--ink)"></b></label>
+        <input type="range" id="fail" min="0" max="100" value="36">
+        <div class="readout" id="readout" aria-live="polite"></div>
+        <p class="src">Expected drift per offer = 0.08 × (share taken) − 0.12 × (share failed), starting at 0.5 and held between 0 and 1. Average failure went from about 23% to about 36% after 4.2, which put ordinary responders about 4 points from the cliff. Real scores are not in the database.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 7 MODULE 5 -->
+<section class="slide" id="s-m5" data-title="Module 5">
+  <div class="inner">
+    <div class="modgrid">
+      <div>
+        <div class="modnum"><div class="badge">5</div><div class="title">Super Speed · 18 prompts</div></div>
+        <h2>From a one-pager to something I can click.</h2>
+        <div class="prompt"><div class="lab"><span>My prompt</span><span>#5 of 18</span></div>
+          <q>Take the brief you just wrote and build me a working prototype, an actual screen I can click through, not a description of one. Build it as a single file I can just open in my browser. Show me where this would actually happen, and make at least one thing on it respond when I click it.</q></div>
+        <p class="src" style="margin-top:12px">Prompt #18 (clarifying questions until 95% sure) set up the three-tab rebuild shown on the next slide.</p>
+      </div>
+      <div class="card finding">
+        <span class="tag obs">Artifact · <span class="mono">05-super-speed/prototype.html</span></span>
+        <h3>Building it forced four decisions the brief had skipped.</h3>
+        <div class="flow viz">
+          <div class="step"><div class="hd">Kip, handler</div>Sees <span class="qbadge">Quiet</span> on Meteor Mite, with the evidence: pings halved, most offers missed.</div>
+          <div class="fl-arrow">→</div>
+          <div class="step"><div class="hd">Kip taps</div><b>Check in</b>. Confirms they spoke to the responder. Score resets to neutral; logged by name.</div>
+          <div class="fl-arrow">→</div>
+          <div class="step"><div class="hd">Responder's phone</div><div class="phone">You're still on the list. Here is what happened to your last few offers.</div></div>
+        </div>
+        <ul style="color:var(--muted);font-size:14.5px;margin:12px 0 0;padding-left:18px">
+          <li><b style="color:var(--ink)">Who vouches</b> for a reset? (a confirm box I added)</li>
+          <li>What does <b style="color:var(--ink)">"usual"</b> mean as a baseline?</li>
+          <li>Can the console read each responder's last yes and last outcomes?</li>
+          <li>What may the phone message <b style="color:var(--ink)">claim</b>? It only holds if the build makes misses cheaper.</li>
+        </ul>
+        <p class="src">Source: 05-super-speed/session-notes.md. In the prototype, sample data and placeholder numbers only.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 8 MODULE 6 -->
+<section class="slide" id="s-m6" data-title="Module 6">
+  <div class="inner">
+    <div class="modgrid">
+      <div>
+        <div class="modnum"><div class="badge">6</div><div class="title">Sidekicks · 19 prompts</div></div>
+        <h2>Turn the way I review briefs into a skill.</h2>
+        <div class="prompt"><div class="lab"><span>My prompt</span><span>#4 of 19</span></div>
+          <q>Make a skill called review-checklist. When I point it at a brief, it checks that the brief: names who owns it, says how we'll know it worked, keeps the same scope start to finish, and explains the problem before the fix.</q></div>
+        <p class="src" style="margin-top:12px">Saved as <span class="mono">.claude/skills/review-checklist/SKILL.md</span>. First run on the Module 5 brief: <b>Needs changes</b>. After several rounds of edits and re-checks: <b>Ready</b>.</p>
+      </div>
+      <div class="card finding">
+        <span class="tag obs">Observed · the skill's own verdicts on 05-super-speed/brief.md</span>
+        <h3>Same four tests, two dates, one brief.</h3>
+        <div class="seg" id="seg-m6"><button class="on" data-run="a">20 Oct run</button><button data-run="b">2 Nov run</button></div>
+        <div class="tests" id="tests-m6"></div>
+        <p class="src">Verdict is "Ready" only if all four pass. Numeric targets are deferred on purpose until two weeks of data exist.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 9 CAUSE -->
+<section class="slide" id="s-cause" data-title="The cause">
+  <div class="inner">
+    <p class="kicker">Putting it together</p>
+    <h2>It began on release morning. The cause is still not proven.</h2>
+    <p class="lede">Misses jump on the day 4.2 shipped, which rules out a seasonal dip. Beyond that, I rank the explanations by how well the data supports them, and I say what would settle it.</p>
+    <div class="causegrid">
+      <div class="card">
+        <h3>Missed share of pings, by day</h3>
+        <div id="chart-days" class="viz"></div>
+        <p class="src" style="margin-top:6px">First miss 09:04 on 12 Aug; every one of 15 areas, 16 responders and 4 parts of the day rose.</p>
+      </div>
+      <div class="card">
+        <h3>How sure I am of each cause <span style="color:var(--dim);font-weight:400;font-size:13px">(out of 95)</span></h3>
+        <div id="causes"></div>
+        <p class="src">Why not "the 60s wait" outright: every refusal came within 40s, before and after, so a 60s window looks long enough for people who say no. "Yes" times can't be seen.</p>
+        <div class="settle"><span>Answer times for "yes"</span><span>Push delivery logs</span><span>Real scores</span><span>Data after 6 Sep</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 10 PROTOTYPE -->
+<section class="slide" id="s-proto" data-title="The fix">
+  <div class="inner">
+    <p class="kicker">The fix, through the prototype</p>
+    <h2>Make silence visible, and give a quiet responder a way back.</h2>
+    <div class="protogrid">
+      <div>
+        <p class="lede" style="font-size:16px;margin-bottom:14px">This is my working prototype, live. Follow the tour, or just click around.</p>
+        <div class="tour" id="tour">
+          <button data-do="tab-console"><i>1</i><span>Open Kip's console<small>The handler's view</small></span></button>
+          <button data-do="replay"><i>2</i><span>Make Meteor Mite go quiet<small>Watch the Quiet marker appear</small></span></button>
+          <button data-do="checkin"><i>3</i><span>Check in as Kip<small>Confirm, and the marker clears</small></span></button>
+          <button data-do="tab-phone"><i>4</i><span>See Meteor Mite's phone<small>"You're still on the list"</small></span></button>
+          <button data-do="tab-sim"><i>5</i><span>Try the score simulator<small>Yes / no / miss, then skip days</small></span></button>
         </div>
       </div>
-      <div class="rv">
-        <div class="frame"><iframe title="Quiet responder prototype" sandbox="allow-scripts" srcdoc="<!doctype html>
+      <div class="frame">
+        <div class="bar"><span>prototype.html · sample data, placeholder numbers</span><span id="frame-note"></span></div>
+        <iframe id="proto" title="Quiet responders prototype" sandbox="allow-scripts allow-same-origin" srcdoc="<!doctype html>
 <html lang=&quot;en&quot;>
 <head>
 <meta charset=&quot;utf-8&quot;>
 <meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;>
-<title>Quiet responder prototype</title>
+<title>Quiet responders prototype</title>
 <style>
   :root {
-    --bg: #f4f5f7; --panel: #fff; --ink: #1c2230; --muted: #667085; --line: #e3e6ec;
-    --brand: #26345c; --amber-bg: #fff4dc; --amber-ink: #8a5a00; --amber-line: #f0d28a;
+    --bg: #f4f5f7; --panel: #fff; --ink: #1c2230; --muted: #5b6577; --line: #e3e6ec;
+    --brand: #26345c; --amber-bg: #fff4dc; --amber-ink: #7a4f00; --amber-line: #f0d28a;
     --green-bg: #e3f5ea; --green-ink: #17663a; --red-bg: #fde8e6; --red-ink: #a1291f;
-    --grey-bg: #eceef3; --grey-ink: #475066;
+    --grey-bg: #eceef3; --grey-ink: #475066; --today: #b3261e; --fix: #1a6b3c;
   }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--bg); color: var(--ink);
          font: 15px/1.45 -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Roboto, sans-serif; }
-  .wrap { max-width: 960px; margin: 0 auto; padding: 20px 16px 48px; }
-  .sample { font-size: 12px; color: var(--muted); margin-bottom: 12px; }
-  .tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+  .wrap { max-width: 1000px; margin: 0 auto; padding: 20px 16px 48px; }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  .sample { font-size: 13px; color: var(--muted); margin-bottom: 14px; }
+  .tabs { display: flex; gap: 8px; margin-bottom: 8px; flex-wrap: wrap; }
   .tab { border: 1px solid var(--line); background: var(--panel); border-radius: 999px;
          padding: 8px 16px; cursor: pointer; font: inherit; color: var(--ink); }
   .tab[aria-selected=&quot;true&quot;] { background: var(--brand); color: #fff; border-color: var(--brand); }
+  .caption { font-size: 13.5px; color: var(--muted); margin: 0 0 14px; }
 
-  .console { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px; margin-bottom: 14px; }
+  .console { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; margin-bottom: 14px; }
   .topbar { background: var(--brand); color: #fff; padding: 12px 18px; display: flex;
-            justify-content: space-between; align-items: center; }
+            justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
   .topbar b { font-size: 16px; }
-  .topbar span { font-size: 13px; opacity: .85; }
-  .banner { display: flex; align-items: center; gap: 12px; background: var(--amber-bg);
-            border-bottom: 1px solid var(--amber-line); color: var(--amber-ink); padding: 10px 18px; }
-  .banner button { margin-left: auto; }
-  .body { padding: 18px; }
-  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted);
-       margin: 0 0 10px; font-weight: 600; }
+  .topbar span { font-size: 13px; opacity: .9; }
+  .body { padding: 16px 18px; }
+  h2 { font-size: 12.5px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted);
+       margin: 0 0 10px; font-weight: 700; }
+  h3 { font-size: 15px; margin: 0 0 6px; }
 
-  .row { display: grid; grid-template-columns: 1.3fr 1.2fr 1fr 1.4fr auto; gap: 12px;
-         align-items: center; padding: 14px; border: 1px solid var(--line); border-radius: 10px;
-         margin-bottom: 10px; }
+  .modes { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; align-items: center; }
+  .modes label { border: 1px solid var(--line); background: #fff; border-radius: 8px; padding: 6px 12px; cursor: pointer; font-size: 14px; }
+  .modes input { margin-right: 6px; }
+  .modes label.on { border-color: var(--brand); background: #eef1fa; font-weight: 600; }
+
+  .row { display: grid; grid-template-columns: 1.2fr 1.3fr 1fr 1.4fr auto; gap: 12px;
+         align-items: center; padding: 14px; border: 1px solid var(--line); border-radius: 10px; margin-bottom: 10px; }
   .row.quiet { border-color: var(--amber-line); background: #fffdf6; }
   .name { font-weight: 600; }
   .sub { font-size: 12.5px; color: var(--muted); }
@@ -392,509 +501,752 @@
   button.btn { font: inherit; border-radius: 8px; padding: 7px 14px; cursor: pointer;
                border: 1px solid var(--brand); background: var(--brand); color: #fff; }
   button.btn.ghost { background: #fff; color: var(--brand); }
-  button.btn:disabled { opacity: .4; cursor: not-allowed; }
-  button.link { background: none; border: 0; color: var(--brand); cursor: pointer; font: inherit;
-                text-decoration: underline; padding: 0; }
-  .banner button.btn { background: var(--amber-ink); border-color: var(--amber-ink); }
+  button.btn.yes { background: var(--green-ink); border-color: var(--green-ink); }
+  button.btn.no { background: var(--grey-ink); border-color: var(--grey-ink); }
+  button.btn.miss { background: var(--red-ink); border-color: var(--red-ink); }
+  button.btn:disabled { opacity: .45; cursor: not-allowed; }
+  button.link { background: none; border: 0; color: var(--brand); cursor: pointer; font: inherit; text-decoration: underline; padding: 0; }
 
-  .log { margin-top: 22px; }
-  .log-item { padding: 10px 14px; border: 1px solid var(--line); border-radius: 8px; font-size: 14px;
-              background: #fafbfc; margin-bottom: 6px; }
-  .empty { color: var(--muted); font-size: 14px; padding: 6px 2px; }
+  .alertcard { border: 1px solid var(--amber-line); background: var(--amber-bg); color: #5c3d00;
+               border-radius: 10px; padding: 12px 14px; margin-bottom: 14px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .alertcard.calm { border-color: var(--line); background: #fafbfc; color: var(--muted); }
+  .alertcard .grow { flex: 1; min-width: 200px; }
+  .toast { position: fixed; top: 16px; right: 16px; z-index: 5; max-width: 340px; background: #1c2230; color: #fff;
+           border-radius: 12px; padding: 14px; box-shadow: 0 8px 28px rgba(0,0,0,.25); }
+  .toast .acts { display: flex; gap: 8px; margin-top: 10px; }
+  .toast button.btn.ghost { background: transparent; color: #fff; border-color: #6b7488; }
 
-  .overlay { position: fixed; inset: 0; background: rgba(20,24,36,.45); display: flex;
-             align-items: center; justify-content: center; padding: 16px; }
-  .modal { background: #fff; border-radius: 12px; max-width: 460px; width: 100%; padding: 22px; }
-  .modal h3 { margin: 0 0 6px; font-size: 18px; }
+  .log-item { padding: 9px 12px; border: 1px solid var(--line); border-radius: 8px; font-size: 14px; background: #fafbfc; margin-bottom: 6px; }
+  .empty { color: var(--muted); font-size: 14px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { font-size: 12.5px; color: var(--muted); font-weight: 700; }
+
+  .overlay { position: fixed; inset: 0; background: rgba(20,24,36,.45); display: flex; align-items: center; justify-content: center; padding: 16px; z-index: 10; }
+  .modal { background: #fff; border-radius: 12px; max-width: 470px; width: 100%; padding: 22px; }
+  .modal:focus { outline: none; }
+  .modal h3 { font-size: 18px; }
   .facts { background: var(--bg); border-radius: 8px; padding: 10px 12px; margin: 12px 0; font-size: 14px; }
-  .facts div { display: flex; justify-content: space-between; padding: 2px 0; }
+  .facts div { display: flex; justify-content: space-between; gap: 10px; padding: 2px 0; }
   .check { display: flex; gap: 8px; align-items: flex-start; margin: 14px 0; font-size: 14px; }
   .actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 8px; }
   .fine { font-size: 12.5px; color: var(--muted); }
 
   .stage { display: flex; justify-content: center; padding: 8px 0; }
   .phone { width: 320px; background: #11141d; border-radius: 36px; padding: 12px; }
-  .screen { background: #fff; border-radius: 26px; min-height: 560px; overflow: hidden; }
+  .screen { background: #fff; border-radius: 26px; min-height: 540px; overflow: hidden; }
   .phone-top { background: var(--brand); color: #fff; padding: 18px 16px 12px; }
   .phone-top b { display: block; font-size: 16px; }
-  .phone-top span { font-size: 12px; opacity: .85; }
+  .phone-top span { font-size: 12px; opacity: .9; }
   .phone-body { padding: 14px; }
-  .card { border-radius: 12px; padding: 14px; margin-bottom: 12px; }
-  .card.amber { background: var(--amber-bg); color: #5c3d00; }
-  .card.green { background: var(--green-bg); color: #0f4a29; }
-  .card b { display: block; font-size: 16px; margin-bottom: 4px; }
-  .offer { display: flex; justify-content: space-between; align-items: center; padding: 10px 0;
-           border-bottom: 1px solid var(--line); font-size: 14px; }
+  .pcard { border-radius: 12px; padding: 14px; margin-bottom: 12px; }
+  .pcard.amber { background: var(--amber-bg); color: #5c3d00; }
+  .pcard.green { background: var(--green-bg); color: #0f4a29; }
+  .pcard.grey { background: var(--grey-bg); color: var(--ink); }
+  .pcard b { display: block; font-size: 16px; margin-bottom: 4px; }
+  .offer { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
   .offer:last-child { border-bottom: 0; }
 
-  .notes { margin-top: 22px; font-size: 13px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 12px; }
-  .notes p { margin: 4px 0; }
-  .hint { text-align: center; font-size: 13px; color: var(--muted); margin-top: 10px; }
+  .simgrid { display: grid; grid-template-columns: 320px 1fr; gap: 14px; align-items: start; }
+  .ctl { margin-bottom: 14px; }
+  .ctl label { display: block; font-size: 13.5px; margin-bottom: 2px; }
+  .ctl input[type=range] { width: 100%; }
+  .ctl .val { font-weight: 700; }
+  .btnrow { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+  .rankgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+  .rankcard { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; font-size: 14px; }
+  .rankcard b { font-size: 20px; display: block; }
+  .legend { display: flex; gap: 16px; font-size: 13px; margin-bottom: 4px; flex-wrap: wrap; }
+  .legend i { display: inline-block; width: 18px; height: 3px; vertical-align: middle; margin-right: 6px; }
+  svg text { font-family: inherit; }
 
-  @media (max-width: 720px) {
+  @media (max-width: 760px) {
     .row { grid-template-columns: 1fr; gap: 6px; }
-    .topbar { flex-direction: column; align-items: flex-start; gap: 2px; }
+    .simgrid { grid-template-columns: 1fr; }
+    .toast { left: 16px; right: 16px; max-width: none; }
   }
 </style>
 </head>
 <body>
 <div class=&quot;wrap&quot;>
-  <div class=&quot;sample&quot;>Prototype of the quiet-responder brief. Sample data: see the note at the bottom for what is real and what is a placeholder.</div>
+  <h1>Bringing quiet responders back: working prototype</h1>
+  <div class=&quot;sample&quot;>Sample data and placeholder numbers. Kip, Meteor Mite and The Gale are the brief's examples. The numbers marked as placeholders are for the staff engineer to set. Nothing here touches a real score.</div>
 
   <div class=&quot;tabs&quot; role=&quot;tablist&quot;>
-    <button class=&quot;tab&quot; id=&quot;tab-console&quot; role=&quot;tab&quot; aria-selected=&quot;true&quot;>Kip's console</button>
-    <button class=&quot;tab&quot; id=&quot;tab-phone&quot; role=&quot;tab&quot; aria-selected=&quot;false&quot;>Meteor Mite's phone</button>
+    <button class=&quot;tab&quot; role=&quot;tab&quot; data-tab=&quot;console&quot; id=&quot;tab-console&quot;>Kip's console</button>
+    <button class=&quot;tab&quot; role=&quot;tab&quot; data-tab=&quot;phone&quot; id=&quot;tab-phone&quot;>Meteor Mite's phone</button>
+    <button class=&quot;tab&quot; role=&quot;tab&quot; data-tab=&quot;sim&quot; id=&quot;tab-sim&quot;>Score simulator</button>
   </div>
+  <p class=&quot;caption&quot; id=&quot;caption&quot;></p>
 
   <div id=&quot;view&quot;></div>
+  <div id=&quot;modalRoot&quot;></div>
+  <div id=&quot;toastRoot&quot;></div>
 
-  <div class=&quot;notes&quot;>
-    <p><b>Real (database, to 6 Sep):</b> Meteor Mite's pings fell from about 1.6 a day (about 11 a week) to about 0.5 a day (about 4 a week), with 57% missed. The Gale's rose to about 2.7 a day. They share Eastgate, and Kip handles both.</p>
-    <p><b>Placeholder:</b> &quot;last yes&quot;, the last three outcomes, the Quiet trigger, and the banner. The brief leaves open how a handler is told (badge, digest or push) and the window. The banner here is a stand-in. Nothing on this page changes any real score.</p>
-    <p><button class=&quot;link&quot; id=&quot;reset&quot;>Reset the demo</button></p>
-  </div>
+  <p class=&quot;fine&quot;><button class=&quot;link&quot; data-act=&quot;reset&quot;>Reset the demo</button></p>
 </div>
 
 <script>
-  var state = { tab: &quot;console&quot;, modal: false, confirmed: false, checkedIn: false, log: [] };
+(function () {
+  var USUAL = 11;
+  var NEUTRAL = 0.5;
+  var MIN_PER_POINT = 18.75; // 0.25 recent-acceptance weight / 0.60 proximity weight * 45 minute horizon
+  var DEFAULTS = { miss: 0.06, heal: 0.01, pct: 50, thr: 3 };
+  var SEQ = [&quot;miss&quot;, &quot;miss&quot;, &quot;no&quot;, &quot;miss&quot;, &quot;yes&quot;, &quot;miss&quot;, &quot;miss&quot;, &quot;no&quot;, &quot;miss&quot;, &quot;miss&quot;, &quot;yes&quot;, &quot;miss&quot;, &quot;no&quot;, &quot;miss&quot;];
 
-  function pill(label, kind) { return '<span class=&quot;chip ' + kind + '&quot;>' + label + '</span>'; }
+  var S, timer = null;
+  function freshState() {
+    return { tab: &quot;console&quot;, mode: &quot;badge&quot;, events: [], pings: USUAL, p: { miss: DEFAULTS.miss, heal: DEFAULTS.heal, pct: DEFAULTS.pct, thr: DEFAULTS.thr },
+             modal: false, confirmed: false, log: [], pingsAtCheckin: null, checkedIn: false,
+             pushDismissed: false, prevQuiet: false, playing: false };
+  }
+  S = freshState();
 
-  function consoleView() {
-    var mite = state.checkedIn
-      ? pill(&quot;Checked in just now&quot;, &quot;green&quot;)
-      : pill(&quot;Quiet&quot;, &quot;amber&quot;);
-    var banner = state.checkedIn ? &quot;&quot; :
-      '<div class=&quot;banner&quot;><span><b>1 responder in Eastgate has gone quiet.</b> Their pings have halved.</span>' +
-      '<button class=&quot;btn&quot; id=&quot;open-banner&quot;>Review</button></div>';
-    var miteNote = state.checkedIn
-      ? '<div class=&quot;sub&quot;>Watching: back near the usual rate within 2 weeks?</div>'
-      : '<div class=&quot;sub&quot;>Pings halved. Usual 11 a week.</div>';
-    var action = state.checkedIn
-      ? '<span class=&quot;sub&quot;>Done</span>'
-      : '<button class=&quot;btn&quot; id=&quot;open-row&quot;>Check in</button>';
-    var log = state.log.length
-      ? state.log.map(function (l) { return '<div class=&quot;log-item&quot;>' + l + '</div>'; }).join(&quot;&quot;)
-      : '<div class=&quot;empty&quot;>Nothing yet today.</div>';
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+  function r3(v) { return Math.round(v * 1000) / 1000; }
+
+  function simulate() {
+    var p = S.p, today = NEUTRAL, fix = NEUTRAL, day = 0, lastYes = null, offers = [], baseline = 0;
+    var series = [{ label: &quot;&quot;, today: today, fix: fix }];
+    S.events.forEach(function (e) {
+      var label = &quot;&quot;;
+      if (e.type === &quot;yes&quot;) {
+        today = clamp(today + 0.08, 0, 1); fix = clamp(fix + 0.08, 0, 1);
+        offers.push({ o: &quot;yes&quot;, day: day }); lastYes = day; label = &quot;Y&quot;;
+      } else if (e.type === &quot;no&quot;) {
+        today = clamp(today - 0.12, 0, 1); fix = clamp(fix - 0.12, 0, 1);
+        offers.push({ o: &quot;no&quot;, day: day }); label = &quot;N&quot;;
+      } else if (e.type === &quot;miss&quot;) {
+        today = clamp(today - 0.12, 0, 1); fix = clamp(fix - p.miss, 0, 1);
+        offers.push({ o: &quot;miss&quot;, day: day }); label = &quot;M&quot;;
+      } else if (e.type === &quot;day&quot;) {
+        day += e.n;
+        if (fix < NEUTRAL) fix = Math.min(NEUTRAL, fix + p.heal * e.n);
+        label = &quot;+&quot; + e.n + &quot;d&quot;;
+      } else if (e.type === &quot;checkin&quot;) {
+        fix = NEUTRAL; baseline = offers.length; label = &quot;C&quot;;
+      }
+      series.push({ label: label, today: r3(today), fix: r3(fix) });
+    });
+    return { today: r3(today), fix: r3(fix), day: day, lastYes: lastYes, offers: offers, baseline: baseline, series: series };
+  }
+
+  function quietState(sim) {
+    var recent = sim.offers.slice(sim.baseline).slice(-4);
+    var misses = recent.filter(function (o) { return o.o === &quot;miss&quot;; }).length;
+    var byMiss = misses >= S.p.thr;
+    var byVol = S.pings < USUAL * S.p.pct / 100 &amp;&amp; (S.pingsAtCheckin === null || S.pings < S.pingsAtCheckin);
+    var why = [];
+    if (byVol) why.push(&quot;pings this week &quot; + S.pings + &quot;, usual &quot; + USUAL);
+    if (byMiss) why.push(misses + &quot; of the last &quot; + recent.length + &quot; offers missed&quot;);
+    return { quiet: byMiss || byVol, why: why.join(&quot; and &quot;), missWhy: byMiss ? misses + &quot; of the last &quot; + recent.length + &quot; offers missed&quot; : &quot;&quot; };
+  }
+
+  function chip(label, kind) { return '<span class=&quot;chip ' + kind + '&quot;>' + label + '</span>'; }
+  function outcomeChip(o) {
+    if (o === &quot;yes&quot;) return chip(&quot;Taken&quot;, &quot;green&quot;);
+    if (o === &quot;no&quot;) return chip(&quot;Turned down&quot;, &quot;grey&quot;);
+    return chip(&quot;Missed&quot;, &quot;red&quot;);
+  }
+  function lastThree(sim) { return sim.offers.slice(-3).reverse(); }
+  function lastYesText(sim) {
+    if (sim.lastYes === null) return &quot;none in this demo&quot;;
+    var d = sim.day - sim.lastYes;
+    return d === 0 ? &quot;today&quot; : d + (d === 1 ? &quot; day ago&quot; : &quot; days ago&quot;);
+  }
+
+  /* ---------- Console tab ---------- */
+  function consoleHTML(sim, q) {
+    var showChecked = S.checkedIn &amp;&amp; !q.quiet;
+    var statusChip = &quot;&quot;;
+    if (S.mode === &quot;badge&quot;) statusChip = q.quiet ? chip(&quot;Quiet&quot;, &quot;amber&quot;) : (showChecked ? chip(&quot;Checked in&quot;, &quot;green&quot;) : chip(&quot;Normal&quot;, &quot;green&quot;));
+    else statusChip = showChecked ? chip(&quot;Checked in&quot;, &quot;green&quot;) : chip(&quot;Normal&quot;, &quot;green&quot;);
+    var note = q.quiet ? (q.missWhy ? '<div class=&quot;sub&quot;>' + q.missWhy + '</div>' : &quot;&quot;) : (showChecked ? '<div class=&quot;sub&quot;>Watching: does the miss rate come back down?</div>' : &quot;&quot;);
+    var rowAction = (S.mode === &quot;badge&quot; &amp;&amp; q.quiet) ? '<button class=&quot;btn&quot; data-act=&quot;open-checkin&quot;>Check in</button>' : &quot;&quot;;
+    var outcomes = lastThree(sim);
+    var pills = outcomes.length ? outcomes.map(function (o) { return outcomeChip(o.o); }).join(&quot;&quot;) : '<span class=&quot;sub&quot;>no offers yet in this demo</span>';
+
+    var digest = &quot;&quot;;
+    if (S.mode === &quot;digest&quot;) {
+      digest = q.quiet
+        ? '<div class=&quot;alertcard&quot;><div class=&quot;grow&quot;><b>Daily digest, 08:00</b><br>1 responder has gone quiet: Meteor Mite (' + q.why + ').</div><button class=&quot;btn&quot; data-act=&quot;open-checkin&quot;>Check in with Meteor Mite</button></div>'
+        : '<div class=&quot;alertcard calm&quot;><div class=&quot;grow&quot;><b>Daily digest, 08:00</b><br>Nobody has gone quiet.</div></div>';
+    }
+
+    var log = S.log.length ? S.log.map(function (l) { return '<div class=&quot;log-item&quot;>' + l + '</div>'; }).join(&quot;&quot;) : '<div class=&quot;empty&quot;>Nothing yet.</div>';
 
     return '' +
+      '<div class=&quot;modes&quot; role=&quot;radiogroup&quot; aria-label=&quot;How the handler is told&quot;>' +
+        '<span class=&quot;fine&quot; style=&quot;margin-right:6px&quot;>How Kip is told:</span>' +
+        modeLabel(&quot;badge&quot;, &quot;Badge on the list&quot;) + modeLabel(&quot;digest&quot;, &quot;Daily digest&quot;) + modeLabel(&quot;push&quot;, &quot;Push alert&quot;) +
+      '</div>' +
+      '<div class=&quot;modes&quot;><button class=&quot;btn&quot; data-act=&quot;replay&quot;' + (S.playing ? &quot; disabled&quot; : &quot;&quot;) + '>Make Meteor Mite go quiet</button>' +
+        '<span class=&quot;fine&quot;>Plays a sample quiet streak, 9 of 14 offers missed.</span></div>' +
       '<div class=&quot;console&quot;>' +
         '<div class=&quot;topbar&quot;><b>Rook Dispatch &amp;middot; Console</b><span>Signed in as Kip &amp;middot; Eastgate</span></div>' +
-        banner +
-        '<div class=&quot;body&quot;>' +
+        '<div class=&quot;body&quot;>' + digest +
           '<h2>Your responders</h2>' +
-          '<div class=&quot;row' + (state.checkedIn ? '' : ' quiet') + '&quot;>' +
+          '<div class=&quot;row' + (q.quiet &amp;&amp; S.mode === &quot;badge&quot; ? &quot; quiet&quot; : &quot;&quot;) + '&quot;>' +
             '<div><div class=&quot;name&quot;>Meteor Mite</div><div class=&quot;sub&quot;>Eastgate</div></div>' +
-            '<div>' + mite + miteNote + '</div>' +
-            '<div><div class=&quot;name&quot;>4 this week</div><div class=&quot;sub&quot;>Last yes: 6 days ago</div></div>' +
-            '<div class=&quot;pills&quot;>' + pill(&quot;Missed&quot;, &quot;red&quot;) + pill(&quot;Missed&quot;, &quot;red&quot;) + pill(&quot;Turned down&quot;, &quot;grey&quot;) + '</div>' +
-            '<div>' + action + '</div>' +
+            '<div>' + statusChip + note + '</div>' +
+            '<div><div class=&quot;name&quot;>' + S.pings + ' this week</div><div class=&quot;sub&quot;>Usual ' + USUAL + ' &amp;middot; last yes: ' + lastYesText(sim) + '</div></div>' +
+            '<div class=&quot;pills&quot;>' + pills + '</div>' +
+            '<div>' + rowAction + '</div>' +
           '</div>' +
           '<div class=&quot;row&quot;>' +
             '<div><div class=&quot;name&quot;>The Gale</div><div class=&quot;sub&quot;>Eastgate</div></div>' +
-            '<div>' + pill(&quot;Normal&quot;, &quot;green&quot;) + '</div>' +
-            '<div><div class=&quot;name&quot;>19 this week</div><div class=&quot;sub&quot;>Last yes: 2 hours ago</div></div>' +
-            '<div class=&quot;pills&quot;>' + pill(&quot;Taken&quot;, &quot;green&quot;) + pill(&quot;Taken&quot;, &quot;green&quot;) + pill(&quot;Turned down&quot;, &quot;grey&quot;) + '</div>' +
+            '<div>' + chip(&quot;Normal&quot;, &quot;green&quot;) + '</div>' +
+            '<div><div class=&quot;name&quot;>19 this week</div><div class=&quot;sub&quot;>Usual 13 &amp;middot; last yes: 2 hours ago</div></div>' +
+            '<div class=&quot;pills&quot;>' + chip(&quot;Taken&quot;, &quot;green&quot;) + chip(&quot;Taken&quot;, &quot;green&quot;) + chip(&quot;Turned down&quot;, &quot;grey&quot;) + '</div>' +
             '<div></div>' +
           '</div>' +
-          '<div class=&quot;log&quot;><h2>Routing override log</h2>' + log + '</div>' +
+          '<h2 style=&quot;margin-top:20px&quot;>Routing override log</h2>' + log +
         '</div>' +
-      '</div>' + modalView();
+      '</div>' +
+      '<div class=&quot;card&quot;><h2>The three measures (sample values, to 6 Sep)</h2>' +
+        '<table><tr><th>Measure</th><th>Today</th><th>Target</th></tr>' +
+        '<tr><td>Handler notices a quiet responder</td><td>About 3 days, from a ticket</td><td>Same working day</td></tr>' +
+        '<tr><td>Offers missed per quiet responder, over a fixed 2 weeks</td><td>The four: 58.9% (2.9% before 4.2)</td><td>Back toward their own pre-4.2 rate</td></tr>' +
+        '<tr><td>&quot;Phone quiet&quot; tickets about Farlight and The Undertow</td><td>22 in 27 days</td><td>Fewer per 27 days</td></tr></table>' +
+        '<p class=&quot;fine&quot; style=&quot;margin:8px 0 0&quot;>Numbers for the last two get set after two weeks of data, against each responder\'s own rate before 4.2.</p></div>';
+  }
+  function modeLabel(v, text) {
+    return '<label class=&quot;' + (S.mode === v ? &quot;on&quot; : &quot;&quot;) + '&quot;><input type=&quot;radio&quot; name=&quot;mode&quot; value=&quot;' + v + '&quot;' + (S.mode === v ? &quot; checked&quot; : &quot;&quot;) + '>' + text + '</label>';
   }
 
-  function modalView() {
-    if (!state.modal) return &quot;&quot;;
-    return '' +
-      '<div class=&quot;overlay&quot; id=&quot;overlay&quot;><div class=&quot;modal&quot; role=&quot;dialog&quot; aria-modal=&quot;true&quot;>' +
-        '<h3>Check in with Meteor Mite</h3>' +
-        '<div class=&quot;fine&quot;>Call or message them first. This only resets their standing once you have.</div>' +
-        '<div class=&quot;facts&quot;>' +
-          '<div><span>Pings, last 7 days</span><b>4 (usual 11)</b></div>' +
-          '<div><span>Last yes</span><b>6 days ago</b></div>' +
-          '<div><span>Last three</span><b>Missed, missed, turned down</b></div>' +
-        '</div>' +
-        '<label class=&quot;check&quot;><input type=&quot;checkbox&quot; id=&quot;confirm-box&quot;' + (state.confirmed ? ' checked' : '') + '>' +
-          '<span>I have confirmed that Meteor Mite is available.</span></label>' +
-        '<div class=&quot;fine&quot;>Resets their standing to neutral and adds a line to the override log. It does not put them ahead of anyone better placed.</div>' +
-        '<div class=&quot;actions&quot;>' +
-          '<button class=&quot;btn ghost&quot; id=&quot;cancel&quot;>Cancel</button>' +
-          '<button class=&quot;btn&quot; id=&quot;do-checkin&quot;' + (state.confirmed ? '' : ' disabled') + '>Check in</button>' +
-        '</div>' +
-      '</div></div>';
+  /* ---------- Phone tab ---------- */
+  function phoneHTML(sim, q) {
+    var card;
+    if (S.checkedIn &amp;&amp; !q.quiet) card = '<div class=&quot;pcard green&quot;><b>Kip checked in with you</b>Your place on the list is reset. Offers still go to whoever is best placed for each callout.</div>';
+    else if (q.quiet) card = '<div class=&quot;pcard amber&quot;><b>You\'ve had fewer offers lately</b>You\'re still on the list. A missed offer now counts for less than turning one down, and your place on the list recovers over time.</div>';
+    else card = '<div class=&quot;pcard grey&quot;><b>You\'re on the list</b>Nothing to flag right now.</div>';
+    var offers = lastThree(sim);
+    var list = offers.length ? offers.map(function (o) {
+      return '<div class=&quot;offer&quot;><span>Day ' + o.day + '</span>' + outcomeChip(o.o) + '</div>';
+    }).join(&quot;&quot;) : '<div class=&quot;empty&quot;>No offers yet in this demo.</div>';
+    return '<div class=&quot;stage&quot;><div class=&quot;phone&quot;><div class=&quot;screen&quot;>' +
+      '<div class=&quot;phone-top&quot;><b>Rook Responder</b><span>Meteor Mite &amp;middot; Available</span></div>' +
+      '<div class=&quot;phone-body&quot;>' + card + '<h2>Your last three offers</h2>' + list + '</div></div></div></div>';
   }
 
-  function phoneView() {
-    var card = state.checkedIn
-      ? '<div class=&quot;card green&quot;><b>Kip checked in with you</b>Your standing is back to neutral. Offers still go to whoever is best placed for each callout.</div>'
-      : '<div class=&quot;card amber&quot;><b>You have had fewer offers lately</b>You are still on the list. Missed offers now count for less than before, and your standing recovers over time.</div>';
-    return '' +
-      '<div class=&quot;stage&quot;><div class=&quot;phone&quot;><div class=&quot;screen&quot;>' +
-        '<div class=&quot;phone-top&quot;><b>Rook Responder</b><span>Meteor Mite &amp;middot; Available</span></div>' +
-        '<div class=&quot;phone-body&quot;>' + card +
-          '<h2>Your last three offers</h2>' +
-          '<div class=&quot;offer&quot;><span>Yesterday, 18:40</span>' + pill(&quot;Missed&quot;, &quot;red&quot;) + '</div>' +
-          '<div class=&quot;offer&quot;><span>3 days ago, 07:15</span>' + pill(&quot;Missed&quot;, &quot;red&quot;) + '</div>' +
-          '<div class=&quot;offer&quot;><span>6 days ago, 21:02</span>' + pill(&quot;Turned down&quot;, &quot;grey&quot;) + '</div>' +
+  /* ---------- Simulator tab ---------- */
+  function simStatic() {
+    return '<div class=&quot;simgrid&quot;>' +
+      '<div class=&quot;card&quot;>' +
+        '<h2>Meteor Mite gets an offer</h2>' +
+        '<div class=&quot;btnrow&quot;>' +
+          '<button class=&quot;btn yes&quot; data-act=&quot;ev&quot; data-t=&quot;yes&quot;>Yes</button>' +
+          '<button class=&quot;btn no&quot; data-act=&quot;ev&quot; data-t=&quot;no&quot;>No</button>' +
+          '<button class=&quot;btn miss&quot; data-act=&quot;ev&quot; data-t=&quot;miss&quot;>Miss</button>' +
         '</div>' +
-      '</div></div></div>' +
-      '<div class=&quot;hint&quot;>' + (state.checkedIn ? 'This is what the phone shows after Kip checks in.' :
-        'Go back to Kip\'s console and check in to see this change.') + '</div>';
+        '<div class=&quot;btnrow&quot;>' +
+          '<button class=&quot;btn ghost&quot; data-act=&quot;day&quot; data-n=&quot;1&quot;>Skip a day</button>' +
+          '<button class=&quot;btn ghost&quot; data-act=&quot;day&quot; data-n=&quot;7&quot;>Skip 7 days</button>' +
+        '</div>' +
+        '<div class=&quot;btnrow&quot;>' +
+          '<button class=&quot;btn ghost&quot; data-act=&quot;replay&quot; id=&quot;replayBtn&quot;>Replay a sample quiet streak (9 of 14 missed)</button>' +
+          '<button class=&quot;btn ghost&quot; data-act=&quot;open-checkin&quot;>Check in as Kip</button>' +
+        '</div>' +
+        '<div class=&quot;ctl&quot;><label for=&quot;s-pings&quot;>Pings this week: <span class=&quot;val&quot; id=&quot;v-pings&quot;></span> (usual ' + USUAL + ')</label><input type=&quot;range&quot; id=&quot;s-pings&quot; min=&quot;0&quot; max=&quot;20&quot; step=&quot;1&quot; value=&quot;' + S.pings + '&quot;></div>' +
+        '<h2 style=&quot;margin-top:18px&quot;>Placeholders for the staff engineer</h2>' +
+        '<div class=&quot;ctl&quot;><label for=&quot;s-miss&quot;>Cost of a miss, with the fixes: <span class=&quot;val&quot; id=&quot;v-miss&quot;></span></label><input type=&quot;range&quot; id=&quot;s-miss&quot; min=&quot;0&quot; max=&quot;0.12&quot; step=&quot;0.01&quot; value=&quot;' + S.p.miss + '&quot;></div>' +
+        '<div class=&quot;ctl&quot;><label for=&quot;s-heal&quot;>Healing a day, up to neutral: <span class=&quot;val&quot; id=&quot;v-heal&quot;></span></label><input type=&quot;range&quot; id=&quot;s-heal&quot; min=&quot;0&quot; max=&quot;0.03&quot; step=&quot;0.005&quot; value=&quot;' + S.p.heal + '&quot;></div>' +
+        '<div class=&quot;ctl&quot;><label for=&quot;s-pct&quot;>Quiet when pings fall below: <span class=&quot;val&quot; id=&quot;v-pct&quot;></span> of usual</label><input type=&quot;range&quot; id=&quot;s-pct&quot; min=&quot;10&quot; max=&quot;100&quot; step=&quot;5&quot; value=&quot;' + S.p.pct + '&quot;></div>' +
+        '<div class=&quot;ctl&quot;><label for=&quot;s-thr&quot;>Quiet when this many of the last 4 offers are missed: <span class=&quot;val&quot; id=&quot;v-thr&quot;></span></label><input type=&quot;range&quot; id=&quot;s-thr&quot; min=&quot;1&quot; max=&quot;4&quot; step=&quot;1&quot; value=&quot;' + S.p.thr + '&quot;></div>' +
+      '</div>' +
+      '<div id=&quot;simLive&quot;></div>' +
+    '</div>';
   }
+
+  function chartSVG(sim) {
+    var W = 640, H = 250, L = 38, R = 70, T = 14, B = 30;
+    var pw = W - L - R, ph = H - T - B, n = sim.series.length;
+    function x(i) { return L + (n === 1 ? 0 : (pw * i) / (n - 1)); }
+    function y(v) { return T + (1 - v) * ph; }
+    var g = &quot;&quot;;
+    [0, 0.5, 1].forEach(function (v) {
+      g += '<line x1=&quot;' + L + '&quot; x2=&quot;' + (W - R) + '&quot; y1=&quot;' + y(v) + '&quot; y2=&quot;' + y(v) + '&quot; stroke=&quot;#d6dae3&quot; stroke-width=&quot;1&quot;' + (v === 0.5 ? ' stroke-dasharray=&quot;5 4&quot;' : &quot;&quot;) + '/>' +
+           '<text x=&quot;' + (L - 6) + '&quot; y=&quot;' + (y(v) + 4) + '&quot; font-size=&quot;11&quot; text-anchor=&quot;end&quot; fill=&quot;#5b6577&quot;>' + v.toFixed(1) + '</text>';
+    });
+    g += '<text x=&quot;' + (W - R + 6) + '&quot; y=&quot;' + (y(0.5) - 4) + '&quot; font-size=&quot;10.5&quot; fill=&quot;#5b6577&quot;>neutral</text>';
+    var tl = sim.series.map(function (s, i) { return x(i) + &quot;,&quot; + y(s.today); }).join(&quot; &quot;);
+    var fl = sim.series.map(function (s, i) { return x(i) + &quot;,&quot; + y(s.fix); }).join(&quot; &quot;);
+    var dots = &quot;&quot;;
+    sim.series.forEach(function (s, i) {
+      dots += '<circle cx=&quot;' + x(i) + '&quot; cy=&quot;' + y(s.today) + '&quot; r=&quot;3.2&quot; fill=&quot;#b3261e&quot;/>';
+      var cx = x(i), cy = y(s.fix);
+      dots += '<path d=&quot;M' + cx + ' ' + (cy - 4.5) + ' L' + (cx + 4.5) + ' ' + cy + ' L' + cx + ' ' + (cy + 4.5) + ' L' + (cx - 4.5) + ' ' + cy + ' Z&quot; fill=&quot;#1a6b3c&quot;/>';
+    });
+    var xl = &quot;&quot;;
+    if (n <= 40) sim.series.forEach(function (s, i) {
+      if (i > 0) xl += '<text x=&quot;' + x(i) + '&quot; y=&quot;' + (H - 10) + '&quot; font-size=&quot;9.5&quot; text-anchor=&quot;middle&quot; fill=&quot;#5b6577&quot;>' + s.label + '</text>';
+    });
+    var last = sim.series[n - 1];
+    var lab = '<text x=&quot;' + (W - R + 6) + '&quot; y=&quot;' + (y(last.today) + (last.today === last.fix ? 12 : 4)) + '&quot; font-size=&quot;11&quot; fill=&quot;#b3261e&quot; font-weight=&quot;700&quot;>Today ' + last.today.toFixed(2) + '</text>' +
+              '<text x=&quot;' + (W - R + 6) + '&quot; y=&quot;' + (y(last.fix) + (last.today === last.fix ? -2 : 4)) + '&quot; font-size=&quot;11&quot; fill=&quot;#1a6b3c&quot; font-weight=&quot;700&quot;>Fixes ' + last.fix.toFixed(2) + '</text>';
+    return '<svg viewBox=&quot;0 0 ' + W + ' ' + H + '&quot; width=&quot;100%&quot; role=&quot;img&quot; aria-label=&quot;Score over time, today\'s rules against the fixes&quot;>' +
+      g + '<polyline points=&quot;' + tl + '&quot; fill=&quot;none&quot; stroke=&quot;#b3261e&quot; stroke-width=&quot;2.5&quot;/>' +
+      '<polyline points=&quot;' + fl + '&quot; fill=&quot;none&quot; stroke=&quot;#1a6b3c&quot; stroke-width=&quot;2.5&quot;/>' + dots + xl + lab + '</svg>';
+  }
+
+  function simLiveHTML(sim, q) {
+    var statusText = q.quiet ? 'The console shows <b>Quiet</b>: ' + q.why + '.' :
+      (S.checkedIn ? 'The console shows <b>Checked in</b>.' : 'The console shows <b>Normal</b>.');
+    function mins(v) { return ((1 - v) * MIN_PER_POINT).toFixed(1); }
+    var gapNote = &quot;&quot;;
+    if (sim.offers.length &amp;&amp; !S.checkedIn) {
+      var gap = r3(sim.fix - sim.today);
+      gapNote = '<p class=&quot;fine&quot; style=&quot;margin:4px 0 0&quot;>' + (gap > 0 ? 'Right now the fixes sit ' + gap.toFixed(2) + ' above today\'s rules.' : 'Right now the fixes and today\'s rules are level.') +
+        ' The way back comes from yeses, time passing and Check in.</p>';
+    }
+    var rules = '<table><tr><th></th><th>Today\'s rules</th><th>With the fixes</th></tr>' +
+      '<tr><td>Yes</td><td>+0.08</td><td>+0.08</td></tr>' +
+      '<tr><td>No (turned down)</td><td>-0.12</td><td>-0.12</td></tr>' +
+      '<tr><td>Miss</td><td>-0.12</td><td>-' + S.p.miss.toFixed(2) + '</td></tr>' +
+      '<tr><td>Healing</td><td>none</td><td>+' + S.p.heal.toFixed(3) + ' a day, up to 0.50, never above</td></tr>' +
+      '<tr><td>Check in</td><td>not possible</td><td>resets to 0.50, logged with Kip\'s name</td></tr></table>';
+    return '<div class=&quot;card&quot;>' +
+      '<h2>Meteor Mite\'s score, day ' + sim.day + '</h2>' +
+      '<div class=&quot;legend&quot;><span><i style=&quot;background:#b3261e&quot;></i>Today\'s rules (circles)</span><span><i style=&quot;background:#1a6b3c&quot;></i>With the fixes (diamonds)</span></div>' +
+      chartSVG(sim) +
+      '<p class=&quot;fine&quot; style=&quot;margin:4px 0 0&quot;>Y yes, N no, M miss, +Nd days pass, C check in. Dashed line is neutral (0.50).</p>' + gapNote +
+      '<div class=&quot;rankgrid&quot;>' +
+        '<div class=&quot;rankcard&quot;>Today\'s rules<b>' + mins(sim.today) + ' min</b>A responder with a perfect score could be this far further away and still rank level.</div>' +
+        '<div class=&quot;rankcard&quot;>With the fixes<b>' + mins(sim.fix) + ' min</b>The same, with the fixes.</div>' +
+      '</div>' +
+      '<p class=&quot;fine&quot; style=&quot;margin:6px 0 0&quot;>Estimate from the weights in config.py: proximity 0.60 over 45 minutes, recent acceptance 0.25. About 19 minutes per point of score.</p>' +
+      '<p style=&quot;margin:12px 0 0&quot;>' + statusText + '</p>' +
+    '</div>' +
+    '<div class=&quot;card&quot;><h2>The rules in this simulator</h2>' + rules + '</div>';
+  }
+
+  function updateReadouts() {
+    var set = function (id, t) { var el = document.getElementById(id); if (el) el.textContent = t; };
+    set(&quot;v-pings&quot;, S.pings);
+    set(&quot;v-miss&quot;, &quot;-&quot; + S.p.miss.toFixed(2));
+    set(&quot;v-heal&quot;, &quot;+&quot; + S.p.heal.toFixed(3));
+    set(&quot;v-pct&quot;, S.p.pct + &quot;%&quot;);
+    set(&quot;v-thr&quot;, S.p.thr + &quot; of 4&quot;);
+  }
+
+  /* ---------- Rendering ---------- */
+  var CAPTIONS = {
+    console: &quot;What Kip sees. Choose how he is told, then press Make Meteor Mite go quiet to watch his list change.&quot;,
+    phone: &quot;What Meteor Mite sees. It changes with the simulator and with Kip's check-in.&quot;,
+    sim: &quot;Press Replay to watch both rule sets run on the same offers. Then skip a few days and use Check in.&quot;
+  };
 
   function render() {
-    document.getElementById(&quot;tab-console&quot;).setAttribute(&quot;aria-selected&quot;, state.tab === &quot;console&quot;);
-    document.getElementById(&quot;tab-phone&quot;).setAttribute(&quot;aria-selected&quot;, state.tab === &quot;phone&quot;);
-    document.getElementById(&quot;view&quot;).innerHTML = state.tab === &quot;console&quot; ? consoleView() : phoneView();
+    var sim = simulate(), q = quietState(sim);
+    if (q.quiet &amp;&amp; !S.prevQuiet) S.pushDismissed = false;
+    S.prevQuiet = q.quiet;
+    [&quot;console&quot;, &quot;phone&quot;, &quot;sim&quot;].forEach(function (t) {
+      document.getElementById(&quot;tab-&quot; + t).setAttribute(&quot;aria-selected&quot;, S.tab === t ? &quot;true&quot; : &quot;false&quot;);
+    });
+    document.getElementById(&quot;caption&quot;).textContent = CAPTIONS[S.tab];
+    var view = document.getElementById(&quot;view&quot;);
+    if (S.tab === &quot;console&quot;) view.innerHTML = consoleHTML(sim, q);
+    else if (S.tab === &quot;phone&quot;) view.innerHTML = phoneHTML(sim, q);
+    else { view.innerHTML = simStatic(); updateReadouts(); }
+    refreshLive(sim, q);
+    renderModal(sim);
+    renderToast(q);
   }
 
-  function openModal() { state.modal = true; state.confirmed = false; render(); }
+  function refreshLive(sim, q) {
+    if (S.tab === &quot;sim&quot;) {
+      document.getElementById(&quot;simLive&quot;).innerHTML = simLiveHTML(sim, q);
+      var rb = document.getElementById(&quot;replayBtn&quot;); if (rb) rb.disabled = S.playing;
+    }
+  }
+
+  function refresh() {
+    var sim = simulate(), q = quietState(sim);
+    if (q.quiet &amp;&amp; !S.prevQuiet) S.pushDismissed = false;
+    S.prevQuiet = q.quiet;
+    if (S.tab === &quot;sim&quot;) { refreshLive(sim, q); updateReadouts(); }
+    else render();
+    renderToast(q);
+  }
+
+  function renderToast(q) {
+    var root = document.getElementById(&quot;toastRoot&quot;);
+    if (S.mode === &quot;push&quot; &amp;&amp; S.tab === &quot;console&quot; &amp;&amp; q.quiet &amp;&amp; !S.pushDismissed &amp;&amp; !S.modal) {
+      root.innerHTML = '<div class=&quot;toast&quot; role=&quot;alert&quot;><b>Meteor Mite has gone quiet</b><div class=&quot;fine&quot; style=&quot;color:#c9cfdb;margin-top:2px&quot;>' + q.why + '</div>' +
+        '<div class=&quot;acts&quot;><button class=&quot;btn&quot; data-act=&quot;open-checkin&quot;>Check in</button><button class=&quot;btn ghost&quot; data-act=&quot;dismiss&quot;>Dismiss</button></div></div>';
+    } else root.innerHTML = &quot;&quot;;
+  }
+
+  function renderModal(sim) {
+    var root = document.getElementById(&quot;modalRoot&quot;);
+    var wasOpen = root.firstChild !== null;
+    if (!S.modal) { root.innerHTML = &quot;&quot;; return; }
+    var outs = lastThree(sim).map(function (o) { return o.o === &quot;yes&quot; ? &quot;taken&quot; : (o.o === &quot;no&quot; ? &quot;turned down&quot; : &quot;missed&quot;); });
+    root.innerHTML = '<div class=&quot;overlay&quot; data-act=&quot;close-modal&quot;><div class=&quot;modal&quot; role=&quot;dialog&quot; aria-modal=&quot;true&quot; aria-labelledby=&quot;mt&quot; tabindex=&quot;-1&quot;>' +
+      '<h3 id=&quot;mt&quot;>Check in with Meteor Mite</h3>' +
+      '<div class=&quot;fine&quot;>Reach them first. This only resets their standing once you have.</div>' +
+      '<div class=&quot;facts&quot;>' +
+        '<div><span>Pings, this week</span><b>' + S.pings + ' (usual ' + USUAL + ')</b></div>' +
+        '<div><span>Last yes</span><b>' + lastYesText(sim) + '</b></div>' +
+        '<div><span>Last three</span><b>' + (outs.length ? outs.join(&quot;, &quot;) : &quot;none yet&quot;) + '</b></div>' +
+        '<div><span>Standing, with the fixes</span><b>' + sim.fix.toFixed(2) + ' to 0.50</b></div>' +
+      '</div>' +
+      '<label class=&quot;check&quot;><input type=&quot;checkbox&quot; id=&quot;confirm-box&quot;' + (S.confirmed ? &quot; checked&quot; : &quot;&quot;) + '><span>I have reached Meteor Mite and confirmed they can take offers.</span></label>' +
+      '<div class=&quot;fine&quot;>Resets their standing to neutral and adds a line to the override log with your name. It does not put them ahead of anyone better placed.</div>' +
+      '<div class=&quot;actions&quot;><button class=&quot;btn ghost&quot; data-act=&quot;close-modal-btn&quot;>Cancel</button>' +
+      '<button class=&quot;btn&quot; id=&quot;do-checkin&quot; data-act=&quot;do-checkin&quot;' + (S.confirmed ? &quot;&quot; : &quot; disabled&quot;) + '>Check in</button></div>' +
+      '</div></div>';
+    if (!wasOpen) { var m = root.querySelector(&quot;.modal&quot;); if (m) m.focus(); }
+  }
+
+  /* ---------- Actions ---------- */
+  function stopTimer() { if (timer) { clearInterval(timer); timer = null; } S.playing = false; }
+
+  function returnFocus() {
+    var b = document.querySelector('[data-act=&quot;open-checkin&quot;]') || document.querySelector('.tab[aria-selected=&quot;true&quot;]');
+    if (b) b.focus();
+  }
+  function closeModal() { S.modal = false; render(); returnFocus(); }
+
+  function replay() {
+    stopTimer();
+    S.events = []; S.log = []; S.checkedIn = false; S.pingsAtCheckin = null; S.pings = USUAL; S.prevQuiet = false;
+    var i = 0; S.playing = true;
+    var slider = document.getElementById(&quot;s-pings&quot;); if (slider) slider.value = USUAL;
+    refresh();
+    timer = setInterval(function () {
+      if (i < SEQ.length) { S.events.push({ type: SEQ[i] }); S.events.push({ type: &quot;day&quot;, n: 2 }); i++; }
+      else {
+        stopTimer(); S.pings = 4;
+        var s2 = document.getElementById(&quot;s-pings&quot;); if (s2) s2.value = 4;
+      }
+      refresh();
+    }, 380);
+  }
 
   document.addEventListener(&quot;click&quot;, function (e) {
-    var id = e.target.id;
-    if (id === &quot;tab-console&quot;) { state.tab = &quot;console&quot;; render(); }
-    else if (id === &quot;tab-phone&quot;) { state.tab = &quot;phone&quot;; render(); }
-    else if (id === &quot;open-row&quot; || id === &quot;open-banner&quot;) { openModal(); }
-    else if (id === &quot;cancel&quot; || id === &quot;overlay&quot;) { state.modal = false; render(); }
-    else if (id === &quot;do-checkin&quot;) {
-      var t = new Date().toLocaleTimeString([], { hour: &quot;2-digit&quot;, minute: &quot;2-digit&quot; });
-      state.checkedIn = true; state.modal = false;
-      state.log.unshift(t + &quot; &amp;middot; Kip &amp;middot; Check in &amp;middot; Meteor Mite &amp;middot; standing reset to neutral&quot;);
-      render();
+    var t = e.target.closest(&quot;[data-act],[data-tab]&quot;);
+    if (!t) return;
+    if (t.dataset.tab) { S.tab = t.dataset.tab; render(); return; }
+    var a = t.dataset.act;
+    if (a === &quot;ev&quot;) { S.events.push({ type: t.dataset.t }); refresh(); }
+    else if (a === &quot;day&quot;) { S.events.push({ type: &quot;day&quot;, n: +t.dataset.n }); refresh(); }
+    else if (a === &quot;replay&quot;) { replay(); }
+    else if (a === &quot;open-checkin&quot;) { S.modal = true; S.confirmed = false; render(); }
+    else if (a === &quot;close-modal&quot;) { if (e.target === t) closeModal(); }
+    else if (a === &quot;close-modal-btn&quot;) { closeModal(); }
+    else if (a === &quot;dismiss&quot;) { S.pushDismissed = true; refresh(); }
+    else if (a === &quot;do-checkin&quot;) {
+      var sim = simulate();
+      S.log.unshift(&quot;Day &quot; + sim.day + &quot; &amp;middot; Kip &amp;middot; Check in &amp;middot; Meteor Mite &amp;middot; standing reset to neutral (&quot; + sim.fix.toFixed(2) + &quot; to 0.50)&quot;);
+      S.events.push({ type: &quot;checkin&quot; });
+      S.checkedIn = true; S.pingsAtCheckin = S.pings; S.modal = false; S.confirmed = false;
+      render(); returnFocus();
     }
-    else if (id === &quot;reset&quot;) { state = { tab: &quot;console&quot;, modal: false, confirmed: false, checkedIn: false, log: [] }; render(); }
+    else if (a === &quot;reset&quot;) { stopTimer(); S = freshState(); render(); }
+  });
+
+  document.addEventListener(&quot;input&quot;, function (e) {
+    var id = e.target.id, v = +e.target.value;
+    if (id === &quot;s-pings&quot;) S.pings = v;
+    else if (id === &quot;s-miss&quot;) S.p.miss = v;
+    else if (id === &quot;s-heal&quot;) S.p.heal = v;
+    else if (id === &quot;s-pct&quot;) S.p.pct = v;
+    else if (id === &quot;s-thr&quot;) S.p.thr = v;
+    else return;
+    refresh();
+  });
+
+  document.addEventListener(&quot;keydown&quot;, function (e) {
+    if (e.key === &quot;Escape&quot; &amp;&amp; S.modal) closeModal();
   });
 
   document.addEventListener(&quot;change&quot;, function (e) {
-    if (e.target.id === &quot;confirm-box&quot;) {
-      state.confirmed = e.target.checked;
-      document.getElementById(&quot;do-checkin&quot;).disabled = !state.confirmed;
+    if (e.target.name === &quot;mode&quot;) { S.mode = e.target.value; S.pushDismissed = false; render(); }
+    else if (e.target.id === &quot;confirm-box&quot;) {
+      S.confirmed = e.target.checked;
+      var b = document.getElementById(&quot;do-checkin&quot;); if (b) b.disabled = !S.confirmed;
     }
   });
 
   render();
+})();
 </script>
 </body>
 </html>
-"></iframe></div>
-        <p class="src" style="margin-top:8px">Your prototype, <a href="05-super-speed/prototype.html">05-super-speed/prototype.html</a>, running here unchanged. Meteor Mite's ping drop is real (to 6 Sep). “Last yes”, the last three outcomes, the Quiet trigger and the banner are placeholders. Nothing here changes a real score.</p>
+"></iframe>
       </div>
     </div>
-    <p class="src">Pitch to a responder: “You're still on the list, and we'll tell you what happened to your last few offers.” Before anyone builds: see the real scores first. If the four aren't at the floor, the brief changes. <a href="05-super-speed/brief.md">Full brief</a>.</p>
+    <div class="promise">
+      <div><b>It does</b>a miss costs less than a "no"; scores heal toward neutral, never above; a Quiet marker; Check in; a message to the responder.</div>
+      <div><b>It does not</b>promise offers, touch the 60s wait or proximity weights, or fix the wider miss spike (about two thirds of the fall in "taken").</div>
+    </div>
+    <p class="src">The decision I need from Helen, Director of Product: hold engineering's "small fix" until the real scores are in, because it helps only if the four sit at the bottom. In the prototype the last yes, last outcomes and offer times are invented.</p>
   </div>
 </section>
 
-<!-- 9. SKILL -->
-<section class="slide" data-title="The guard">
+<!-- 11 SKILL -->
+<section class="slide" id="s-skill" data-title="The guard-rail">
   <div class="inner">
-    <p class="kicker rv">Keeping it from happening again</p>
-    <h2 class="rv">review-checklist: four questions before any brief ships.</h2>
-    <p class="lede rv">The 4.2 routing briefs were one sentence each. My skill reads a brief and returns the same verdict every time: owner, success measure, consistent scope, problem before fix.</p>
-    <div class="grid g2">
-      <div class="rv">
-        <div class="toggle" role="group" aria-label="Which brief">
-          <button id="t-real" aria-pressed="true">My Module 5 brief (real run)</button>
-          <button id="t-old" aria-pressed="false">4.2's briefs (illustration)</button>
-        </div>
-        <div class="card" id="skillcard"></div>
+    <p class="kicker">How it doesn't happen again</p>
+    <h2>The 4.2 briefs would have been caught at the door.</h2>
+    <div class="skillgrid">
+      <div>
+        <p class="lede" style="font-size:17px">The deeper failure was a brief, not a bug: <b>one sentence each, no goal, no success measure</b>. <span class="mono">review-checklist</span> asks the same four questions of every brief, before anyone builds.</p>
+        <table class="map">
+          <tr><th>What the 4.2 briefs lacked</th><th>Test that asks for it</th></tr>
+          <tr><td>"Tune how long a ping waits": no success measure</td><td><b>2 · How will we know it worked?</b></td></tr>
+          <tr><td>No goal, so no problem stated before the fix</td><td><b>4 · Problem before the fix</b></td></tr>
+          <tr><td>Two changes, no word on how they combine</td><td><b>3 · Same scope, start to finish</b></td></tr>
+          <tr><td>Nobody named for the outcome</td><td><b>1 · Who owns it?</b></td></tr>
+        </table>
+        <p class="src">My reading, not a run: the two original 4.2 briefs exist only as one-line wiki entries, so I haven't run the skill on them. The last row is the skill's own standard, not a finding about 4.2.</p>
       </div>
-      <div class="rv">
-        <div class="card" style="margin-bottom:18px">
-          <h3>What it does and doesn't do</h3>
-          <ul class="tight" style="margin:0">
-            <li><b>Does:</b> force a goal, a measure and an owner onto the page <i>before</i> build. A one-line brief fails three of four tests.</li>
-            <li><b>Doesn't:</b> know the system. It would not have found the penalty loop; it makes someone write down how a shorter wait feeds into scores.</li>
-            <li>Prints in chat; edits nothing unless asked.</li>
-          </ul>
-        </div>
-        <div class="card">
-          <h3>The habit around it</h3>
-          <ul class="tight" style="margin:0">
-            <li>A Monday review reminder runs it over every brief. Next run <b>26 Oct, ~9:43</b>. Output goes to <code>06-sidekicks/scheduled-run-output.txt</code>.</li>
-            <li><code>renew-reminders</code> renews it the day before expiry (25 Oct).</li>
-            <li><span class="pill bad">Caveat</span> both are session-only. They fire only while the session is open and die if it closes.</li>
-          </ul>
+      <div>
+        <h3>What keeps it working</h3>
+        <div class="guard">
+          <div><b>Monday review.</b> A session-only reminder runs it on every <span class="mono">brief.md</span> and appends the full output to <span class="mono">06-sidekicks/scheduled-run-output.txt</span>. Next run 9 Nov.</div>
+          <div><b>Renewal.</b> <span class="mono">renew-reminders</span> re-creates it before its 7-day expiry. Both die if the session closes. They already died once, between 20 Oct and 1 Nov, and were re-created.</div>
+          <div><b>Honest limit.</b> The skill checks the document, not the facts. The brief is "Ready" while the small fix's number is still unconfirmed.</div>
         </div>
       </div>
     </div>
-    <p class="src">The 4.2 verdicts apply the skill's own rules to the one-sentence wiki briefs (“Weight proximity more heavily when ranking”, “Tune how long a ping waits”). They are not a recorded run. The Module 5 verdict is a real run on <code>05-super-speed/brief.md</code>.</p>
   </div>
 </section>
 
-<!-- 10. NEXT -->
-<section class="slide" data-title="What's next">
+<!-- 12 NEXT -->
+<section class="slide" id="s-next" data-title="Next">
   <div class="inner">
-    <p class="kicker rv">What I'd do now</p>
-    <h2 class="rv">Test the wait, check four scores, fix my own brief first.</h2>
-    <div class="grid g3">
-      <div class="card rv"><span class="pill good">Decide</span><h3 style="margin-top:10px">Don't roll back 4.2</h3><p style="margin:0;color:var(--muted)">Filters and the three defect fixes show no harm (the filter ones look positive). Test <b style="color:var(--ink)">90s on part of the traffic</b>: one constant in <code>config.py</code>, and it doesn't undo the proximity change.</p></div>
-      <div class="card rv"><span class="pill missed">This week</span><h3 style="margin-top:10px">Get the missing numbers</h3><p style="margin:0;color:var(--muted)">Yes-answer times and push logs; the four's real scores (reset to neutral or confirm the floor); data after 6 Sep; support replies to the 45 open routing tickets.</p></div>
-      <div class="card rv"><span class="pill taken">Build</span><h3 style="margin-top:10px">The quiet-responder brief</h3><p style="margin:0;color:var(--muted)">After the scores are seen. It still has <b style="color:var(--ink)">no named owner and no success targets</b>: the checklist's own findings.</p></div>
+    <p class="kicker">Where this leaves us</p>
+    <h2>What I can't see yet, and who can show me.</h2>
+    <div class="three">
+      <div class="card"><h3><span class="tag gap">Not seen</span></h3>
+        <ul><li><b>"Yes" answer times</b> and push delivery logs</li><li><b>Real score history</b> (mine is a replay)</li><li><b>Anything after 6 Sep</b>: eight weeks stale</li><li>Whether 4.2 changed how a "missed" ping is <b>logged</b></li></ul></div>
+      <div class="card"><h3><span class="tag inf">Asks</span></h3>
+        <ul><li><b>Engineering manager:</b> answer times, push logs, which number the small fix changes</li><li><b>Staff engineer:</b> real scores; does a Check-in reset count as a "yes"?</li><li><b>Helen:</b> hold the small fix; which cut features are still Q3 commitments (Q3 ended 30 Sep)</li></ul></div>
+      <div class="card"><h3><span class="tag obs">Safe to say now</span></h3>
+        <ul><li>The step starts on release morning, in every area</li><li>Refusals held steady; the loss went into misses</li><li>The score loop is real in code and plausible for the four</li><li>Don't roll back all of 4.2; test the 90s wait on part of the traffic</li></ul></div>
     </div>
-    <div class="card rv" style="margin-top:18px">
-      <h3>Overdue and still open</h3>
-      <ul class="tight" style="margin:0">
-        <li>Q3 ended 30 Sep: the talk with Helen about which cut features are still commitments is late. Availability Confidence was committed for 4.2 but didn't ship.</li>
-        <li>Everything rests on one database. Check 4.2 didn't change how a “missed” ping is logged.</li>
-        <li>Supply safety flag for the Supply team: an 11-day wait on a cracked vest plate, and an open vest plate ticket.</li>
-      </ul>
-    </div>
-    <p class="src">Rook Industries is a fictional teaching scenario (Product School “Claude Code for PMs”, cohort ccpm-2026.1). Nothing here is a fact about the world.</p>
+    <p class="src" style="margin-top:22px">Supply safety flag for the Supply team: an 11-day wait on a cracked vest plate. Sources: CLAUDE.md, the six <span class="mono">prompts.md</span> files, each module's <span class="mono">session-notes.md</span>, <span class="mono">00-rook/4-2-impact-analysis.md</span>. Everything in Rook is fictional.</p>
   </div>
 </section>
 
 <script>
 (function () {
-  "use strict";
   var $ = function (s, r) { return (r || document).querySelector(s); };
+  var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
   var NS = "http://www.w3.org/2000/svg";
-  function el(tag, attrs, parent, text) {
-    var e = document.createElementNS(NS, tag);
-    for (var k in attrs) e.setAttribute(k, attrs[k]);
-    if (text != null) e.textContent = text;
-    if (parent) parent.appendChild(e);
-    return e;
-  }
+  var reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  /* ---------- data ---------- */
-  var weeks = ["29 Jun","6 Jul","13 Jul","20 Jul","27 Jul","3 Aug","10 Aug","17 Aug","24 Aug","31 Aug"];
-  var taken = [76.7,77.1,76.4,75.0,77.6,77.9,54.2,65.8,66.7,72.7];
-  var missed = [1.7,2.4,3.4,2.8,2.4,1.2,21.5,17.7,14.8,12.7];
-  var tickets = [6,6,8,5,7,7,20,27,32,25];
-
-  /* ---------- slide nav ---------- */
-  var slides = Array.prototype.slice.call(document.querySelectorAll(".slide"));
-  var dots = $("#dots");
-  slides.forEach(function (s, i) {
-    var b = document.createElement("button");
-    b.setAttribute("aria-label", "Go to slide " + (i + 1) + ": " + s.dataset.title);
-    b.title = s.dataset.title;
-    b.addEventListener("click", function () { slides[i].scrollIntoView({ behavior: "smooth" }); });
-    dots.appendChild(b);
+  /* ---------- tooltip ---------- */
+  var tip = $("#tip");
+  document.addEventListener("mouseover", function (e) {
+    var t = e.target.closest("[data-tip]");
+    if (!t) { tip.style.opacity = 0; return; }
+    tip.textContent = t.getAttribute("data-tip"); tip.style.opacity = 1;
   });
-  var cur = 0;
+  document.addEventListener("mousemove", function (e) {
+    tip.style.left = Math.min(e.clientX + 14, window.innerWidth - 270) + "px"; tip.style.top = (e.clientY + 14) + "px";
+  });
+
+  /* ---------- radar hero ---------- */
+  (function () {
+    var svg = $("#radar"), cx = 200, cy = 200, h = "";
+    h += '<circle cx="200" cy="200" r="170" fill="none" stroke="#263059"/><circle cx="200" cy="200" r="115" fill="none" stroke="#263059"/><circle cx="200" cy="200" r="60" fill="none" stroke="#263059"/>';
+    h += '<circle cx="200" cy="200" r="8" fill="#ffb020"/><text x="200" y="228" text-anchor="middle">callout</text>';
+    var quiet = { 3: "Vesper", 7: "Meteor Mite", 10: "Farlight", 14: "The Undertow" };
+    for (var i = 0; i < 16; i++) {
+      var a = i / 16 * Math.PI * 2 + 0.3, r = i % 2 ? 150 : 100;
+      var x = cx + Math.cos(a) * r, y = cy + Math.sin(a) * r;
+      if (quiet[i]) {
+        h += '<circle class="quietdot" cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="9" data-tip="' + quiet[i] + ': almost silent since 4.2"/>';
+        h += '<text x="' + x.toFixed(1) + '" y="' + (y + 24).toFixed(1) + '" text-anchor="middle" style="fill:#ff6b7a">' + quiet[i] + '</text>';
+      } else {
+        h += '<circle class="ring" cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="9" style="animation-delay:' + (i * 0.2).toFixed(1) + 's"/>';
+        h += '<circle class="responder" cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="7" data-tip="Still answering"/>';
+      }
+    }
+    h += '<text x="200" y="392" text-anchor="middle">12 still answering · 4 gone quiet</text>';
+    svg.innerHTML = h;
+  })();
+
+  /* ---------- helpers ---------- */
+  function el(tag, attrs, parent) { var n = document.createElementNS(NS, tag); for (var k in attrs) n.setAttribute(k, attrs[k]); if (parent) parent.appendChild(n); return n; }
+
+  /* ---------- weekly line chart ---------- */
+  (function () {
+    var W = 640, H = 290, L = 44, R = 20, T = 18, B = 40;
+    var svg = el("svg", { viewBox: "0 0 " + W + " " + H, role: "img", "aria-label": "Weekly share of pings taken: 75 to 78 percent for six weeks, then 54.2, 65.8, 66.7 and 72.7 percent." });
+    var x = function (i) { return L + (W - L - R) * i / 9; }, y = function (v) { return T + (H - T - B) * (1 - (v - 40) / 45); };
+    var g = el("g", { "class": "axis" }, svg);
+    [40, 50, 60, 70, 80].forEach(function (v) {
+      el("line", { x1: L, x2: W - R, y1: y(v), y2: y(v), "class": "grid-line" }, g);
+      var t = el("text", { x: L - 8, y: y(v) + 4, "text-anchor": "end" }, g); t.textContent = v + "%";
+    });
+    var wk = ["29 Jun", "6 Jul", "13 Jul", "20 Jul", "27 Jul", "3 Aug", "10 Aug", "17 Aug", "24 Aug", "31 Aug"];
+    wk.forEach(function (w, i) { if (i % 1 === 0) { var t = el("text", { x: x(i), y: H - 20, "text-anchor": "middle" }, g); t.textContent = w; } });
+    el("rect", { x: x(0), y: y(77.9), width: x(5) - x(0), height: y(75.0) - y(77.9), fill: "#56a8ff", opacity: .22, rx: 3 }, svg);
+    el("line", { x1: x(0), x2: x(5), y1: y(76.8), y2: y(76.8), stroke: "#56a8ff", "stroke-width": 2, "stroke-dasharray": "5 4" }, svg);
+    var tl = el("text", { x: x(0) + 4, y: y(79.6), "class": "lbl m" }, svg); tl.textContent = "Six weeks before: 75.0–77.9%, average 76.8%";
+    var post = [54.2, 65.8, 66.7, 72.7], pts = [];
+    el("line", { x1: x(5), x2: x(6), y1: y(76.8), y2: y(54.2), stroke: "#56a8ff", "stroke-width": 2, opacity: .5 }, svg);
+    post.forEach(function (v, k) { pts.push(x(6 + k) + "," + y(v)); });
+    el("polyline", { points: pts.join(" "), fill: "none", stroke: "#56a8ff", "stroke-width": 2.5, "stroke-linejoin": "round" }, svg);
+    var rel = el("line", { x1: x(6) - 14, x2: x(6) - 14, y1: T, y2: H - B, stroke: "#ffb020", "stroke-width": 1.5, "stroke-dasharray": "4 4" }, svg);
+    var rt = el("text", { x: x(6) - 20, y: T + 10, "text-anchor": "end", "class": "lbl", style: "fill:#ffb020" }, svg); rt.textContent = "4.2 ships 12 Aug";
+    post.forEach(function (v, k) {
+      el("circle", { cx: x(6 + k), cy: y(v), r: 6, fill: "#56a8ff", stroke: "#0f1630", "stroke-width": 2, "data-tip": wk[6 + k] + ": " + v + "% of pings taken" }, svg);
+      var t = el("text", { x: x(6 + k), y: y(v) + (k === 3 ? -12 : 20), "text-anchor": "middle", "class": "lbl" }, svg); t.textContent = v + "%";
+    });
+    var ax = el("text", { x: 4, y: 12, "class": "axis" }, svg); ax.setAttribute("style", "font-size:11px;fill:#7580a6"); ax.textContent = "Axis starts at 40%";
+    $("#chart-weekly").appendChild(svg);
+  })();
+
+  /* ---------- release-day bars ---------- */
+  (function () {
+    var d = [["5",2.6],["6",0],["7",0],["8",4.3],["9",0],["10",0],["11",5.3],["12",28.0],["13",48.0],["14",26.7],["15",25.0],["16",18.2]];
+    var W = 560, H = 270, L = 38, R = 8, T = 16, B = 36, bw = (W - L - R) / d.length;
+    var svg = el("svg", { viewBox: "0 0 " + W + " " + H, role: "img", "aria-label": "Share of pings missed each day, 5 to 16 August: under 6 percent until 11 August, then 28, 48, 27, 25 and 18 percent." });
+    var y = function (v) { return T + (H - T - B) * (1 - v / 50); };
+    var g = el("g", { "class": "axis" }, svg);
+    [0, 10, 20, 30, 40, 50].forEach(function (v) {
+      el("line", { x1: L, x2: W - R, y1: y(v), y2: y(v), "class": "grid-line" }, g);
+      var t = el("text", { x: L - 6, y: y(v) + 4, "text-anchor": "end" }, g); t.textContent = v + "%";
+    });
+    d.forEach(function (r, i) {
+      var after = i >= 7, x0 = L + i * bw + 4, h = Math.max(0, y(0) - y(r[1]));
+      var b = el("path", { d: "M" + x0 + "," + y(0) + " v" + (-Math.max(h, 1.5) + 4) + " q0,-4 4,-4 h" + (bw - 16) + " q4,0 4,4 v" + (Math.max(h, 1.5) - 4) + " z", fill: after ? "#ffb020" : "#5b678f", "data-tip": r[0] + " Aug: " + r[1] + "% of pings missed" }, svg);
+      var t = el("text", { x: x0 + (bw - 8) / 2, y: H - 18, "text-anchor": "middle", "class": "axis" }, svg); t.setAttribute("style", "font-size:11px;fill:#7580a6"); t.textContent = r[0];
+      if (r[1] >= 18) { var lt = el("text", { x: x0 + (bw - 8) / 2, y: y(r[1]) - 6, "text-anchor": "middle", "class": "lbl" }, svg); lt.textContent = Math.round(r[1]) + "%"; }
+    });
+    var m = el("text", { x: L + 7 * bw + 4, y: T + 6, "class": "lbl", style: "fill:#ffb020" }, svg); m.setAttribute("text-anchor", "end"); m.setAttribute("x", L + 7 * bw - 6); m.textContent = "4.2 ships →";
+    var u = el("text", { x: W / 2, y: H - 2, "text-anchor": "middle" }, svg); u.setAttribute("style", "font-size:11px;fill:#7580a6"); u.textContent = "August 2026";
+    $("#chart-days").appendChild(svg);
+  })();
+
+  /* ---------- causes ---------- */
+  (function () {
+    var rows = [["Score loop (miss = refusal)", 50, "Plausible for the four; real scores unseen"], ["Wait cut, 90s → 60s", 40, "Timing fits; no refusal took over 40s"], ["Proximity weight", 20, "Built as briefed; no visible gain"], ["Duplicate-push fix", 15, "Untested"], ["Seasonality", 10, "Flat six weeks, then a step on release morning"]];
+    var html = "";
+    rows.forEach(function (r) {
+      html += '<div class="crow" data-tip="' + r[2] + '"><span>' + r[0] + '</span><span class="track"><span class="fill" data-w="' + (r[1] / 95 * 100).toFixed(1) + '"></span></span><span class="v">' + r[1] + '</span></div>';
+    });
+    $("#causes").innerHTML = html;
+  })();
+
+  /* ---------- score lab ---------- */
+  (function () {
+    var W = 560, H = 250, L = 38, R = 14, T = 14, B = 30, N = 40, svg, path, endlab;
+    var x = function (n) { return L + (W - L - R) * n / N; }, y = function (v) { return T + (H - T - B) * (1 - v); };
+    svg = el("svg", { viewBox: "0 0 " + W + " " + H, role: "img", "aria-label": "Expected score over 40 pings for the chosen failure rate." });
+    var g = el("g", { "class": "axis" }, svg);
+    [0, .25, .5, .75, 1].forEach(function (v) {
+      el("line", { x1: L, x2: W - R, y1: y(v), y2: y(v), "class": "grid-line" }, g);
+      var t = el("text", { x: L - 6, y: y(v) + 4, "text-anchor": "end" }, g); t.textContent = v.toFixed(2).replace(/0$/, "");
+    });
+    [0, 10, 20, 30, 40].forEach(function (n) { var t = el("text", { x: x(n), y: H - 10, "text-anchor": n === 40 ? "end" : "middle" }, g); t.textContent = n === 40 ? "40 offers" : n; });
+    path = el("path", { fill: "none", stroke: "#ffb020", "stroke-width": 3, "stroke-linejoin": "round", "stroke-linecap": "round" }, svg);
+    endlab = el("text", { "class": "lbl", "text-anchor": "end" }, svg);
+    $("#chart-score").appendChild(svg);
+    var slider = $("#fail"), out = $("#readout"), fv = $("#failv");
+    var presets = [["Before 4.2 · 23%", 23], ["After 4.2 · 36%", 36], ["The break-even · 40%", 40], ["The four · ~75%", 75]];
+    var pb = $("#presets");
+    presets.forEach(function (p) { var b = document.createElement("button"); b.textContent = p[0]; b.setAttribute("data-v", p[1]); pb.appendChild(b); });
+    function draw() {
+      var p = +slider.value / 100, d = 0.08 * (1 - p) - 0.12 * p, s = 0.5, pts = [];
+      for (var n = 0; n <= N; n++) { pts.push((n ? "L" : "M") + x(n).toFixed(1) + "," + y(s).toFixed(1)); s = Math.max(0, Math.min(1, s + d)); }
+      path.setAttribute("d", pts.join(" "));
+      var last = Math.max(0, Math.min(1, 0.5 + d * N));
+      endlab.setAttribute("x", W - R - 4); endlab.setAttribute("y", y(last) + (last > .85 ? 18 : -8)); endlab.textContent = last.toFixed(2);
+      fv.textContent = Math.round(p * 100) + "%";
+      var txt;
+      if (Math.abs(d) < 0.0005) txt = "At <b>40%</b> the score goes nowhere. Every responder above this line is on a slope down.";
+      else if (d < 0) txt = "Each offer loses about <b>" + Math.abs(d).toFixed(3) + "</b> on average. From 0.5 the score hits the floor after roughly <b>" + Math.ceil(0.5 / Math.abs(d)) + " offers</b>, and nothing in the code lifts it back.";
+      else txt = "Each offer gains about <b>" + d.toFixed(3) + "</b> on average. The score " + (d * N >= .5 ? "reaches the ceiling after roughly <b>" + Math.ceil(0.5 / d) + " offers</b>." : "barely rises: <b>0.50 → " + last.toFixed(2) + "</b> after 40 offers. A short bad run erases it.");
+      out.innerHTML = txt;
+      $$("button", pb).forEach(function (b) { b.classList.toggle("on", +b.getAttribute("data-v") === Math.round(p * 100)); });
+    }
+    slider.addEventListener("input", draw);
+    pb.addEventListener("click", function (e) { var b = e.target.closest("button"); if (b) { slider.value = b.getAttribute("data-v"); draw(); } });
+    draw();
+  })();
+
+  /* ---------- module 6 skill verdicts ---------- */
+  (function () {
+    var tests = [
+      ["Names who owns it", ["Fail", "Helen is the reader, not an owner; Kip and the staff engineer are only consulted."], ["Pass", "\"Owner: Yanita, Dispatch PM\""]],
+      ["Says how we'll know it worked", ["Partial", "No targets: \"threshold to set\", \"fewer tickets\"."], ["Pass", "Three measures, each with today's value and a direction or time frame."]],
+      ["Keeps the same scope", ["Partial", "The Quiet trigger is \"pings halve\" but the problem is missed offers."], ["Pass", "Small fix framed as a blunter build step (3); timer, Availability Confidence and Supply set aside."]],
+      ["Problem before the fix", ["Pass", "Problem and evidence come first."], ["Pass", "Opens with 15 of 20 offers missed, before the fix."]]
+    ];
+    var box = $("#tests-m6");
+    function render(run) {
+      var i = run === "a" ? 1 : 2, h = "";
+      tests.forEach(function (t, n) { h += '<div class="test"><span class="no">' + (n + 1) + '</span><div><div class="nm">' + t[0] + '</div><div class="ev">' + t[i][1] + '</div></div><div class="verdict v-' + t[i][0] + '">' + t[i][0] + '</div></div>'; });
+      box.innerHTML = h;
+      $$("#seg-m6 button").forEach(function (b) { b.classList.toggle("on", b.getAttribute("data-run") === run); });
+    }
+    $("#seg-m6").addEventListener("click", function (e) { var b = e.target.closest("button"); if (b) render(b.getAttribute("data-run")); });
+    render("a");
+  })();
+
+  /* ---------- prototype tour ---------- */
+  (function () {
+    var frame = $("#proto"), note = $("#frame-note");
+    function doc() { try { return frame.contentDocument; } catch (e) { return null; } }
+    function click(sel) { var d = doc(); if (!d) return false; var n = d.querySelector(sel); if (!n) return false; n.click(); return true; }
+    $("#tour").addEventListener("click", function (e) {
+      var b = e.target.closest("button"); if (!b) return;
+      var a = b.getAttribute("data-do"), ok = false;
+      if (a === "tab-console") ok = click("#tab-console");
+      else if (a === "tab-phone") ok = click("#tab-phone");
+      else if (a === "tab-sim") ok = click("#tab-sim");
+      else if (a === "replay") { click("#tab-console"); ok = click('[data-act="replay"]'); }
+      else if (a === "checkin") { ok = click('[data-act="open-checkin"]'); }
+      note.textContent = ok ? "" : "Click inside the frame to try this step";
+      if (!ok) setTimeout(function () { note.textContent = ""; }, 3500);
+    });
+  })();
+
+  /* ---------- slide nav, progress, reveal ---------- */
+  var slides = $$(".slide"), dots = $("#dots"), cur = 0;
+  slides.forEach(function (s, i) {
+    var b = document.createElement("button"); b.setAttribute("aria-label", "Go to slide " + (i + 1) + ": " + s.getAttribute("data-title")); b.title = s.getAttribute("data-title");
+    b.addEventListener("click", function () { go(i); }); dots.appendChild(b);
+  });
+  function go(i) { i = Math.max(0, Math.min(slides.length - 1, i)); slides[i].scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "start" }); }
   function setCur(i) {
-    cur = i;
-    Array.prototype.forEach.call(dots.children, function (d, j) { d.classList.toggle("on", j === i); });
+    cur = i; $$("button", dots).forEach(function (b, k) { b.classList.toggle("on", k === i); });
+    $("#counter").textContent = (i + 1) + " / " + slides.length + "  ·  ← → to move";
     $("#progress").style.width = ((i + 1) / slides.length * 100) + "%";
   }
   var io = new IntersectionObserver(function (entries) {
     entries.forEach(function (en) {
-      if (en.isIntersecting) { en.target.classList.add("in"); setCur(slides.indexOf(en.target)); }
-    });
-  }, { threshold: 0.45 });
-  slides.forEach(function (s) { io.observe(s); });
-  document.addEventListener("keydown", function (e) {
-    var t = e.target.tagName;
-    if (t === "INPUT" || t === "TEXTAREA" || t === "IFRAME") return;
-    var next = ["ArrowRight","ArrowDown","PageDown"].indexOf(e.key) > -1;
-    var prev = ["ArrowLeft","ArrowUp","PageUp"].indexOf(e.key) > -1;
-    if (!next && !prev) return;
-    e.preventDefault();
-    var n = Math.max(0, Math.min(slides.length - 1, cur + (next ? 1 : -1)));
-    slides[n].scrollIntoView({ behavior: "smooth" });
-  });
-  setCur(0); slides[0].classList.add("in");
-
-  /* ---------- weekly chart ---------- */
-  function drawWeekly(svg, opts) {
-    var W = opts.w, H = opts.h, L = opts.l, R = W - opts.r, T = opts.t;
-    var plotH = opts.plotH, step = (R - L) / (taken.length - 1);
-    function x(i) { return L + i * step; }
-    function y(v) { return T + plotH - (v / 100) * plotH; }
-    if (opts.grid) {
-      [0,25,50,75,100].forEach(function (g) {
-        el("line", { x1: L, x2: R, y1: y(g), y2: y(g), stroke: "#2c3a6b", "stroke-width": 1, "stroke-dasharray": g ? "3 5" : "0" }, svg);
-        el("text", { x: L - 8, y: y(g) + 4, "text-anchor": "end", fill: "#6c7799", "font-size": 11 }, svg, g + "%");
-      });
-      weeks.forEach(function (w, i) { el("text", { x: x(i), y: H - 8, "text-anchor": "middle", fill: "#6c7799", "font-size": 11 }, svg, w); });
-    }
-    var rx = x(6) + step * 2 / 7;
-    el("rect", { x: rx, y: T, width: R - rx + 6, height: plotH, fill: "rgba(255,93,108,.07)" }, svg);
-    el("line", { x1: rx, x2: rx, y1: T - 4, y2: T + plotH + (opts.bars ? opts.barsH + 18 : 0), stroke: "#ff5d6c", "stroke-width": 1.5, "stroke-dasharray": "5 4" }, svg);
-    if (opts.grid) el("text", { x: rx - 6, y: T + 12, "text-anchor": "end", fill: "#ff5d6c", "font-size": 12, "font-weight": 700 }, svg, "12 Aug · 4.2 ships");
-    if (opts.bars) {
-      var by = T + plotH + 26, bh = opts.barsH, max = 32;
-      el("text", { x: L - 8, y: by + bh, "text-anchor": "end", fill: "#6c7799", "font-size": 11 }, svg, "0");
-      el("text", { x: L - 8, y: by + 8, "text-anchor": "end", fill: "#6c7799", "font-size": 11 }, svg, "32");
-      tickets.forEach(function (v, i) {
-        var h = v / max * bh;
-        var r = el("rect", { x: x(i) - 14, y: by + bh - h, width: 28, height: h, rx: 4, fill: i >= 6 ? "#ff5d6c" : "#4a2c44" }, svg);
-        el("title", {}, r, v + " tickets");
-        if (opts.grid) el("text", { x: x(i), y: by + bh - h - 4, "text-anchor": "middle", fill: "#9aa5c8", "font-size": 11 }, svg, v);
-      });
-    }
-    [[taken, "#56a8ff"], [missed, "#ffb020"]].forEach(function (s) {
-      var d = s[0].map(function (v, i) { return (i ? "L" : "M") + x(i).toFixed(1) + " " + y(v).toFixed(1); }).join(" ");
-      el("path", { d: d, fill: "none", stroke: s[1], "stroke-width": opts.grid ? 3.5 : 2.5, "stroke-linejoin": "round", "stroke-linecap": "round" }, svg);
-      s[0].forEach(function (v, i) { el("circle", { cx: x(i), cy: y(v), r: opts.grid ? 4.5 : 3, fill: s[1] }, svg); });
-    });
-    return { x: x, step: step, L: L, R: R };
-  }
-  var wsvg = $("#weekly");
-  var geo = drawWeekly(wsvg, { w: 760, h: 360, l: 44, r: 20, t: 22, plotH: 200, bars: true, barsH: 62, grid: true });
-  var guide = el("line", { x1: 0, x2: 0, y1: 18, y2: 330, stroke: "#eef1fb", "stroke-width": 1, opacity: 0 }, wsvg);
-  var hit = el("rect", { x: 0, y: 0, width: 760, height: 360, fill: "transparent" }, wsvg);
-  function readWeek(i) {
-    $("#weekly-read").innerHTML = "<b>Week of " + weeks[i] + "</b> · taken " + taken[i] + "% · missed " + missed[i] + "% · " + tickets[i] + " tickets" + (i === 6 ? " · <i>straddles the release</i>" : "");
-    guide.setAttribute("x1", geo.x(i)); guide.setAttribute("x2", geo.x(i)); guide.setAttribute("opacity", .5);
-  }
-  hit.addEventListener("pointermove", function (e) {
-    var r = wsvg.getBoundingClientRect(), px = (e.clientX - r.left) / r.width * 760;
-    readWeek(Math.max(0, Math.min(9, Math.round((px - geo.L) / geo.step))));
-  });
-  hit.addEventListener("pointerleave", function () { guide.setAttribute("opacity", 0); });
-  wsvg.setAttribute("tabindex", "0");
-  wsvg.addEventListener("keydown", function (e) {
-    if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
-    e.stopPropagation(); e.preventDefault();
-    wsvg._i = Math.max(0, Math.min(9, (wsvg._i == null ? 5 : wsvg._i) + (e.key === "ArrowRight" ? 1 : -1)));
-    readWeek(wsvg._i);
-  });
-
-  /* ---------- pings per day pairs ---------- */
-  var pairs = [
-    ["Farlight", "", 1.70, 0.42, "bad"], ["The Undertow", "", 1.70, 0.54, "bad"],
-    ["Vesper", "", 1.95, 0.65, "bad"], ["Meteor Mite", "Eastgate", 1.59, 0.54, "bad"],
-    ["The Gale", "Eastgate", 1.86, 2.65, "taken"]
-  ];
-  var pbox = $("#pairs");
-  pairs.forEach(function (p) {
-    var col = p[4] === "bad" ? "var(--bad)" : "var(--taken)";
-    var d = document.createElement("div"); d.className = "pair";
-    d.innerHTML = '<div class="nm">' + p[0] + '<span>' + p[1] + '</span></div>' +
-      '<div class="line"><span>before</span><div class="track"><div class="fill" style="--w:' + (p[2] / 3 * 100) + '%;background:#53618f"></div></div><b>' + p[2].toFixed(2) + '</b></div>' +
-      '<div class="line"><span>after</span><div class="track"><div class="fill" style="--w:' + (p[3] / 3 * 100) + '%;background:' + col + '"></div></div><b>' + p[3].toFixed(2) + '</b></div>';
-    pbox.appendChild(d);
-  });
-
-  /* ---------- score simulator ---------- */
-  var score = 0.5;
-  function showScore() {
-    $("#lvl").style.width = (score * 100) + "%";
-    $("#num").textContent = score.toFixed(2);
-  }
-  function bump(d) { score = Math.max(0, Math.min(1, Math.round((score + d) * 100) / 100)); showScore(); }
-  $("#b-yes").addEventListener("click", function () { bump(0.08); $("#sim-read").textContent = "A yes: +0.08."; });
-  $("#b-miss").addEventListener("click", function () { bump(-0.12); $("#sim-read").textContent = "A missed offer: −0.12, the same as a refusal."; });
-  $("#b-no").addEventListener("click", function () { bump(-0.12); $("#sim-read").textContent = "A refusal: −0.12."; });
-  $("#b-reset").addEventListener("click", function () { score = 0.5; showScore(); drawTrace([0.5]); $("#sim-read").textContent = "Back to neutral (0.50)."; });
-  var fr = $("#fr");
-  fr.addEventListener("input", function () { $("#frv").textContent = fr.value + "%"; });
-  function drawTrace(path) {
-    var s = $("#trace"); while (s.firstChild) s.removeChild(s.firstChild);
-    var W = 400, H = 90, n = Math.max(path.length - 1, 1);
-    el("line", { x1: 0, x2: W, y1: H / 2, y2: H / 2, stroke: "#6c7799", "stroke-dasharray": "4 4" }, s);
-    el("text", { x: 4, y: H / 2 - 4, fill: "#6c7799", "font-size": 10 }, s, "neutral 0.5");
-    var d = path.map(function (v, i) { return (i ? "L" : "M") + (i / 30 * W).toFixed(1) + " " + (H - 4 - v * (H - 8)).toFixed(1); }).join(" ");
-    el("path", { d: d, fill: "none", stroke: path[path.length - 1] < 0.5 ? "#ffb020" : "#3ddc97", "stroke-width": 2.5 }, s);
-  }
-  drawTrace([0.5]);
-  var timer = null;
-  $("#b-run").addEventListener("click", function () {
-    clearInterval(timer);
-    var f = fr.value / 100, i = 0, path = [0.5]; score = 0.5; showScore();
-    timer = setInterval(function () {
-      var fail = Math.floor((i + 1) * f + 1e-9) > Math.floor(i * f + 1e-9);
-      i++; bump(fail ? -0.12 : 0.08); path.push(score); drawTrace(path);
-      if (i >= 30) {
-        clearInterval(timer);
-        $("#sim-read").innerHTML = "After 30 pings at a " + fr.value + "% failure rate: <b>" + score.toFixed(2) + "</b>. " +
-          (f > 0.4 ? "Above 40%, so the score keeps sinking." : f === 0.4 ? "Exactly break-even." : "Below 40%, so it holds or rises.");
+      if (en.isIntersecting) {
+        var i = slides.indexOf(en.target); if (en.intersectionRatio > 0.45) setCur(i);
+        reveal(en.target);
       }
-    }, window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 90);
-  });
-
-  /* ---------- confidence bars ---------- */
-  var conf = [
-    ["Ping outcomes before / after", 90], ["Step on release morning (09:04)", 88], ["The four went quiet", 85],
-    ["Twelve vs four split of the fall", 80], ["Ticket counts and timing", 75], ["Callouts nobody took doubled", 70],
-    ["Score slide explains the four", 50], ["Timeout cut caused the misses", 40], ["Proximity change helped or hurt", 20],
-    ["Push-fix changed delivery", 15], ["Seasonality as the cause", 10]
-  ];
-  var cbox = $("#conf");
-  conf.forEach(function (c) {
-    var col = c[1] >= 70 ? "var(--good)" : c[1] >= 40 ? "var(--missed)" : "var(--bad)";
-    var d = document.createElement("div"); d.className = "conf-row";
-    d.innerHTML = '<span>' + c[0] + '</span><div class="track"><div class="fill" style="--w:' + (c[1] / 95 * 100) + '%;background:' + col + '"></div></div><span class="val" style="color:' + col + '">' + c[1] + '</span>';
-    cbox.appendChild(d);
-  });
-
-  /* ---------- module explorer ---------- */
-  var mods = [
-    { n: "1", name: "Origin Story", sub: "Context + sources", file: "01-origin-story/prompts.md", pn: 2,
-      prompt: "What can you reach from here? List what's in this folder, what's in Rook's wiki, and what tables are in Rook's database.",
-      find: "Rook's database has five tables (callouts, pings, responders, handlers, support_tickets), running 29 Jun to 6 Sep. Pings are taken / turned down / missed, but there is no answer-time column. Before vs after 4.2, taken fell 76.6% → 64.0% and the whole loss went into “missed” (2.3% → 18.0%).",
-      vis: function (b) { ["callouts","pings","responders","handlers","support_tickets"].forEach(function (t) { var c = document.createElement("span"); c.className = "chip mono"; c.textContent = t; b.appendChild(c); }); var n = document.createElement("p"); n.style.cssText = "color:var(--muted);font-size:14px;margin:8px 0 0"; n.innerHTML = "No <code>answer_time</code> column, so the 60s-vs-90s test can't be run from this table."; b.appendChild(n); } },
-    { n: "2", name: "Super Hearing", sub: "Interviews + tickets", file: "02-super-hearing/prompts.md", pn: 2,
-      prompt: "Tell me what they're unhappy about, group it, tell me how many of the four raised each thing, and quote one line for each so I can hear how they actually said it.",
-      find: "3 of 4 handlers said offers vanish before the responder can answer; 2 of 4 described very uneven work. Dot, about Vesper: “he loses it more than he wins it.” The tickets agree from the other end: 45 routing tickets since 4.2, none before.",
-      vis: function (b) { var p = document.createElement("div"); for (var i = 0; i < 4; i++) { var s = document.createElement("span"); s.className = "person" + (i < 3 ? " on" : ""); p.appendChild(s); } b.appendChild(p); var n = document.createElement("p"); n.style.cssText = "color:var(--muted);font-size:14px;margin:8px 0 0"; n.innerHTML = "<b style=\"color:var(--missed)\">3 of 4</b> handlers: offers vanish. Interviews and tickets cover almost different people; only Ambrose appears in both."; b.appendChild(n); } },
-    { n: "3", name: "Rewind", sub: "Before vs after", file: "03-rewind/prompts.md", pn: 1,
-      prompt: "Open 00-rook/data/callout-history.csv. Every row is one responder in one week: how many times we pinged them, and how many of those they took. Release 4.2 shipped on 12 August. Tell me what changed after that date. Show me the weekly numbers before and after, and show me the rows you used to get them.",
-      find: "Taken sat flat at 75–78% for six weeks, then 54.2% in the week of 10 Aug, then 65.8, 66.7 and 72.7. Four responders (Vesper, The Undertow, Meteor Mite, Farlight) went from 11–14 pings a week to 0–5. Later prompts in this module produced the “Ping blast map” artifact.",
-      vis: function (b) { var s = document.createElementNS(NS, "svg"); s.setAttribute("viewBox", "0 0 400 120"); s.setAttribute("class", "chart"); s.setAttribute("role", "img"); s.setAttribute("aria-label", "Weekly taken and missed percent"); b.appendChild(s); drawWeekly(s, { w: 400, h: 120, l: 8, r: 8, t: 8, plotH: 100, bars: false, grid: false }); } },
-    { n: "4", name: "X-Ray Vision", sub: "Routing code", file: "04-x-ray-vision/prompts.md", pn: 7,
-      prompt: "Find me the part of this code that takes points off somebody when they miss a ping or turn one down. Show it to me and explain it in plain English. Then find me every single thing in this code that puts points back on.",
-      find: "Exactly one thing adds points (a yes, +0.08) and one takes them off (any non-yes, −0.12). There is no decay, reset or bonus, so a month of silence changes nothing. A 2019 TODO asks whether scores should ease back, and leaves it “as-is for now”.",
-      vis: function (b) { var c = document.createElement("div"); c.className = "code"; c.innerHTML = '<span class="g">record_accepted</span>  → score + 0.08\n<span class="r">record_declined</span>  → score − 0.12   <span class="c"># miss or refusal</span>\n<span class="c"># TODO(2019): ease back toward neutral?</span>'; b.appendChild(c); } },
-    { n: "5", name: "Super Speed", sub: "Brief + prototype", file: "05-super-speed/prompts.md", pn: 5,
-      prompt: "Take the brief you just wrote and build me a working prototype, an actual screen I can click through, not a description of one. Build it as a single file I can just open in my browser. Show me where this would actually happen, and make at least one thing on it respond when I click it.",
-      find: "A one-page brief and a clickable prototype (05-super-speed/prototype.html): the console marks Meteor Mite Quiet, Kip clicks Check in, and the phone says “You're still on the list.” It addresses about one third of the fall in taken; the rest is the wider miss spike.",
-      vis: function (b) { var d = document.createElement("div"); d.innerHTML = '<span class="pill missed">Quiet</span> <span style="color:var(--muted);font-size:14px">Meteor Mite · pings halved</span><br><span class="btn primary" style="display:inline-block;margin-top:10px;pointer-events:none">Check in</span> <a href="#" id="jump" style="margin-left:10px;font-size:14px">Open it on slide 8 →</a>'; b.appendChild(d); $("#jump", b).addEventListener("click", function (e) { e.preventDefault(); slides[7].scrollIntoView({ behavior: "smooth" }); }); } },
-    { n: "6", name: "Sidekicks", sub: "Skills", file: "06-sidekicks/prompts.md", pn: 4,
-      prompt: "Make a skill called review-checklist. When I point it at a brief, it checks that the brief: names who owns it, says how we'll know it worked, keeps the same scope start to finish, and explains the problem before the fix.",
-      find: "I ran it on my own Module 5 brief: Needs changes. Owner Fail (Helen is the reader, not an owner), success Partial (no targets), scope Partial, problem-before-fix Pass. The checks also confirmed the brief's headline figures against the database.",
-      vis: function (b) { var t = document.createElement("table"); t.innerHTML = "<tr><td>Owner named</td><td><span class='res Fail'>Fail</span></td></tr><tr><td>Success defined</td><td><span class='res Partial'>Partial</span></td></tr><tr><td>Scope consistent</td><td><span class='res Partial'>Partial</span></td></tr><tr><td>Problem before fix</td><td><span class='res Pass'>Pass</span></td></tr>"; b.appendChild(t); } }
-  ];
-  var rail = $("#rail"), modBox = $("#mod");
-  function showMod(i) {
-    var m = mods[i];
-    Array.prototype.forEach.call(rail.children, function (t, j) { t.setAttribute("aria-selected", j === i); });
-    modBox.innerHTML = "";
-    var l = document.createElement("div"), r = document.createElement("div");
-    var p = document.createElement("div"); p.className = "prompt";
-    var who = document.createElement("span"); who.className = "who"; who.textContent = "My prompt · " + m.file + " · #" + m.pn;
-    p.appendChild(who); p.appendChild(document.createTextNode(m.prompt)); l.appendChild(p);
-    var f = document.createElement("div"); f.className = "prompt finding";
-    var fw = document.createElement("span"); fw.className = "who"; fw.textContent = "What it produced"; f.appendChild(fw);
-    f.appendChild(document.createTextNode(m.find)); r.appendChild(f);
-    var v = document.createElement("div"); v.className = "card mod-vis"; r.appendChild(v); m.vis(v);
-    modBox.appendChild(l); modBox.appendChild(r);
+    });
+  }, { threshold: [0.1, 0.5] });
+  slides.forEach(function (s) { io.observe(s); });
+  function reveal(s) {
+    $$(".fill[data-w]", s).forEach(function (f) { f.style.width = f.getAttribute("data-w") + "%"; });
+    $$("[data-count]", s).forEach(function (n) {
+      if (n.getAttribute("data-done")) return; n.setAttribute("data-done", 1);
+      var end = parseFloat(n.getAttribute("data-count")), dec = +n.getAttribute("data-dec") || 0;
+      if (reduce) { n.textContent = end.toFixed(dec); return; }
+      var t0 = null; function step(t) { if (!t0) t0 = t; var k = Math.min(1, (t - t0) / 900); n.textContent = (end * (1 - Math.pow(1 - k, 3))).toFixed(dec); if (k < 1) requestAnimationFrame(step); }
+      requestAnimationFrame(step);
+    });
   }
-  mods.forEach(function (m, i) {
-    var t = document.createElement("button"); t.className = "tab"; t.setAttribute("role", "tab");
-    t.innerHTML = "<b>" + m.n + " · " + m.name + "</b><small>" + m.sub + "</small>";
-    t.addEventListener("click", function () { showMod(i); });
-    rail.appendChild(t);
+  document.addEventListener("keydown", function (e) {
+    var tg = e.target.tagName; if (tg === "INPUT" || tg === "TEXTAREA" || tg === "IFRAME" || e.metaKey || e.ctrlKey || e.altKey) return;
+    if (["ArrowRight", "ArrowDown", "PageDown"].indexOf(e.key) > -1 || (e.key === " " && tg !== "BUTTON")) { e.preventDefault(); go(cur + 1); }
+    else if (["ArrowLeft", "ArrowUp", "PageUp"].indexOf(e.key) > -1) { e.preventDefault(); go(cur - 1); }
+    else if (e.key === "Home") { e.preventDefault(); go(0); }
+    else if (e.key === "End") { e.preventDefault(); go(slides.length - 1); }
   });
-  showMod(0);
-
-  /* ---------- skill card ---------- */
-  var skillData = {
-    real: { title: "Review checklist: 05-super-speed/brief.md", verdict: "Needs changes", vc: "var(--missed)",
-      rows: [["Owner named","Fail","Helen is the reader; Kip and the staff engineer are only consulted."],
-             ["Success defined","Partial","“Threshold to set”, “target to set”: no numbers."],
-             ["Scope consistent","Partial","“Quiet” fires when pings halve, but the problem is missed offers."],
-             ["Problem before fix","Pass","Problem and evidence come first."]],
-      fix: "Name one accountable owner. Give each success measure a number and a date. Say how “ease back” and “Check in” relate." },
-    old: { title: "4.2's routing briefs, as written in the wiki", verdict: "Needs changes", vc: "var(--bad)",
-      rows: [["Owner named","Fail","Nothing in the sentence."],
-             ["Success defined","Fail","No goal, no measure."],
-             ["Scope consistent","NA","One line: nothing to compare. Nobody wrote that a shorter wait feeds into scores."],
-             ["Problem before fix","Fail","“Tune how long a ping waits” is only the fix."]],
-      fix: "Add the problem and who has it, a success measure with a number, and one accountable owner. This is the page the penalty loop would have had to appear on." }
-  };
-  function showSkill(k) {
-    var d = skillData[k];
-    $("#t-real").setAttribute("aria-pressed", k === "real"); $("#t-old").setAttribute("aria-pressed", k === "old");
-    var h = '<div style="font-size:13px;color:var(--muted)">' + d.title + '</div><div class="verdict" style="color:' + d.vc + '">Verdict: ' + d.verdict + '</div><table>';
-    d.rows.forEach(function (r) { h += "<tr><td style='white-space:nowrap'>" + r[0] + "</td><td><span class='res " + r[1] + "'>" + (r[1] === "NA" ? "Can't tell" : r[1]) + "</span></td><td style='color:var(--muted)'>" + r[2] + "</td></tr>"; });
-    h += '</table><p style="margin:12px 0 0;font-size:14.5px"><b>Fix before sharing:</b> <span style="color:var(--muted)">' + d.fix + '</span></p>';
-    $("#skillcard").innerHTML = h;
-  }
-  $("#t-real").addEventListener("click", function () { showSkill("real"); });
-  $("#t-old").addEventListener("click", function () { showSkill("old"); });
-  showSkill("real");
+  setCur(0); reveal(slides[0]);
 })();
 </script>
 </body>

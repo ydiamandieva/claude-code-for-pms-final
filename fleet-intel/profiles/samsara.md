@@ -1,0 +1,11 @@
+# Samsara: profile
+
+**Class:** Direct (large and enterprise fleets; UK and European presence) · **Baseline v1.0 · last checked 2026-11-02** · Evidence IDs in `evidence-register.csv`.
+
+- **Proposition and customers:** connected operations platform for physical operations, strongest with large customers. FY2026 (year to 2026-01-31): ARR $1.9 billion (+30% year on year); 3,194 customers above $100,000 ARR; 96% of those buy two or more products [F, E-0019, Low: search summary of the filing; the SEC page was not opened and the Business Wire release returned 403].
+- **Geography:** global. UK and European customers named in 2025, including bus and coach operators standardising on Samsara (2025-09-10) [E-0020]. A Go Beyond London event in November 2025 announced Smart Compliance, Weather Intelligence, Samsara Avatar and a partnership with AUMOVIO [E-0021, Medium: titles only].
+- **AI:** management named its first AI agent, **AI Safety Coach** (reviews safety video, safety records and weather to give in-cab voice coaching and weekly coaching videos). Agents for compliance, maintenance and dispatch were described as in development, and pricing for agents was to be set after usage is understood [E-0019]. Samsara Coach for Safety: AI avatars and in-cab voice calls, with start-of-day briefings added March 2026; a Samsara UK blog says AI coaching is available to UK customers [E-0022, Low].
+- **Evidence-ladder level:** AI coaching, 4 in the UK (Low confidence, company blog); named agents for compliance, maintenance and dispatch, 2 (announced). **Progression:** coaching actions delivered automatically is the closest to *automated execution* seen in this group, on company descriptions.
+- **Conflict:** one Investor Day aggregator summary says more agents have already launched; the filing language says they are in development. Treated as unverified.
+- **Pricing:** not disclosed; agent pricing explicitly undecided at the time of the FY2026 results.
+- **Strengths [I]:** growth at scale, multi-product adoption, a clear agent roadmap. **Limitations and gaps:** UK and EU general availability and pricing of agents not verified; depth of UK and EU fleet share not public; primary 2026 documents not opened (the Business Wire release returned 403; the SEC filing was not fetched).
