@@ -210,7 +210,7 @@
       <div class="chips">
         <span class="chip"><b>6</b> modules</span>
         <span class="chip"><b>74</b> prompts I wrote</span>
-        <span class="chip"><b>1</b> prototype · <b>1</b> brief · <b>3</b> skills</span>
+        <span class="chip"><b>1</b> prototype · <b>1</b> brief · <b>4</b> skills I asked for</span>
       </div>
     </div>
     <svg class="radar" id="radar" viewBox="0 0 400 400" role="img" aria-label="Sixteen responders; twelve still answer pings, four have gone quiet."></svg>
@@ -351,10 +351,10 @@
         <h2>From a one-pager to something I can click.</h2>
         <div class="prompt"><div class="lab"><span>My prompt</span><span>#5 of 18</span></div>
           <q>Take the brief you just wrote and build me a working prototype, an actual screen I can click through, not a description of one. Build it as a single file I can just open in my browser. Show me where this would actually happen, and make at least one thing on it respond when I click it.</q></div>
-        <p class="src" style="margin-top:12px">Prompt #18 (clarifying questions until 95% sure) set up the three-tab rebuild shown on the next slide.</p>
+        <p class="src" style="margin-top:12px"><b>How the version you can click came about.</b> This prompt built a first console-and-phone version on 20 Oct. Prompt #18 ("ask me clarifying questions … until you're 95% confident") then ran three rounds of questions: click-through plus score simulator, all three handler alerts, rule numbers as adjustable placeholders. After "go", it was rebuilt on 22 Oct as three tabs (commit <span class="mono">deb2c50</span>). On 2 Nov an engineer, architect and designer review pass was applied to it (<span class="mono">2392ed0</span>).</p>
       </div>
       <div class="card finding">
-        <span class="tag obs">Artifact · <span class="mono">05-super-speed/prototype.html</span></span>
+        <span class="tag obs">Artifact · <span class="mono">05-super-speed/prototype.html</span> (current version)</span>
         <h3>Building it forced four decisions the brief had skipped.</h3>
         <div class="flow viz">
           <div class="step"><div class="hd">Kip, handler</div>Sees <span class="qbadge">Quiet</span> on Meteor Mite, with the evidence: pings halved, most offers missed.</div>
@@ -973,7 +973,7 @@
       <div><b>It does</b>a miss costs less than a "no"; scores heal toward neutral, never above; a Quiet marker; Check in; a message to the responder.</div>
       <div><b>It does not</b>promise offers, touch the 60s wait or proximity weights, or fix the wider miss spike (about two thirds of the fall in "taken").</div>
     </div>
-    <p class="src">The decision I need from Helen, Director of Product: hold engineering's "small fix" until the real scores are in, because it helps only if the four sit at the bottom. In the prototype the last yes, last outcomes and offer times are invented.</p>
+    <p class="src">This is the current file: the 22 Oct three-tab rebuild plus the 2 Nov review changes. The decision I need from Helen, Director of Product: hold engineering's "small fix" until the real scores are in, because it helps only if the four sit at the bottom. In the prototype the last yes, last outcomes and offer times are invented.</p>
   </div>
 </section>
 
