@@ -39,3 +39,27 @@ handler-phone-app.txt
      appear until the second section.
 
 4 briefs checked, 4 flagged, 1 flag each.
+
+=== Monday brief review, 2026-11-02 ===
+
+1 brief found (05-super-speed/brief.md, last changed in commit a5703d5).
+05-super-speed/brief.md: Ready. All four tests pass. No failed or partial tests.
+
+## Review checklist: 05-super-speed/brief.md
+
+**Verdict:** Ready (all four pass)
+
+| Test | Result | Evidence |
+|------|--------|----------|
+| Owner named | Pass | "Owner: Yanita, Dispatch PM" |
+| Success defined | Pass | Three measures with today's value and a direction or time frame, such as "Same working day" and "58.9% (2.9% before 4.2)" with a target of back toward that rate. Numeric targets are deferred on purpose ("Numbers are set after two weeks of data"). |
+| Scope consistent | Pass | The overview says the small fix is a blunter version of the first item in build step (3), with no healing, Quiet tag, Check in or responder message. Both wait on the real scores. The timer, Availability Confidence and Supply are set aside in sections 3 and 7. |
+| Problem before fix | Pass | The overview opens with the problem and evidence (15 of 20 offers missed) before the fix. |
+
+**Fix before sharing**
+None
+
+**Not checked**
+- Which number the small fix is. The brief says "most likely" the shared 0.12 penalty, and section 7 still asks engineering to confirm. If it turns out to be the 60-second wait, the overview's scope line ("the 60-second timer is a later decision") and the hold decision would contradict each other.
+- Figures were not re-checked against the database in this run.
+- No other brief.md exists under 00-rook to 06-sidekicks. The four sample briefs named in the 13 Oct entry above (06-sidekicks/briefs/) are not in the folder.
