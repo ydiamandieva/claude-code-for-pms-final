@@ -244,24 +244,16 @@
           <q>What can you reach from here? List what's in this folder, what's in Rook's wiki, and what tables are in Rook's database.</q></div>
       </div>
       <div class="card finding">
-        <span class="tag obs">Observed · database + wiki</span>
-        <h3>Five tables, ten weeks of data, and one column that is missing.</h3>
-        <p style="color:var(--muted);font-size:15px">The database covers 29 Jun to 6/7 Sep. The <b>pings</b> table records taken, turned down or missed, but has <b>no answer-time column</b>, so "was 60 seconds too short?" cannot be tested directly.</p>
-        <div class="tiles viz">
-          <div class="tile"><b>callouts</b>incidents</div>
-          <div class="tile hot"><b>pings</b>every offer</div>
-          <div class="tile"><b>responders</b>16 people</div>
-          <div class="tile"><b>handlers</b>console users</div>
-          <div class="tile"><b>support_tickets</b>147 rows</div>
+        <span class="tag obs">Observed · the 6 Oct chat, the Setup check chat and the 8 Oct chat</span>
+        <h3>The folder: yes. The wiki and database: not yet, and the reply told me why.</h3>
+        <div class="flow viz">
+          <div class="step"><div class="hd">6 Oct · this prompt</div><b>Folder ✓</b> <span style="color:var(--muted)">00-rook (code, Priya's handover note), six module folders, skills, <span class="mono">.mcp.json</span></span><br><b style="color:var(--bad)">Wiki ✗ · Database ✗</b><br><span style="color:var(--muted)">The session was opened in my home folder, so those servers never loaded.</span></div>
+          <div class="fl-arrow">→</div>
+          <div class="step"><div class="hd">6 Oct · Setup check</div>New session in the course folder, then "check setup":<br><b style="color:var(--good)">Wiki ✓</b> found "Team directory"<br><b style="color:var(--good)">Database ✓</b> answered (15 handlers)</div>
+          <div class="fl-arrow">→</div>
+          <div class="step"><div class="hd">8 Oct · first look inside</div>Database tables listed:<br><span class="mono" style="font-size:12px">callouts · pings · responders · handlers · support_tickets</span><br>Data 29 Jun to 6/7 Sep. <b>pings</b> has no answer-time column.</div>
         </div>
-        <div class="timeline" aria-label="Timeline: data from 29 June to 7 September, release on 12 August">
-          <div class="bar"></div>
-          <div class="mark" style="left:0%;transform:none;text-align:left">29 Jun</div>
-          <div class="mark" style="left:63%">12 Aug · 4.2</div>
-          <div class="mark" style="left:100%;transform:translateX(-100%);text-align:right">7 Sep</div>
-          <div class="end" style="left:0">6 weeks before</div><div class="end" style="right:0">~4 weeks after</div>
-        </div>
-        <p class="src">Wiki pages reachable: Releases, Q3 roadmap, Team directory, Research (4 interviews). Module 1 has no session notes, so the link from this prompt to this finding is by topic and order, not by a saved transcript.</p>
+        <p class="src">Why this matters later: the missing answer-time column is why "was 60 seconds too short?" still can't be tested (slide 9). Sources: the 6 Oct chat (prompts #1 to #3), the Setup check chat, and the 8 Oct chat where the tables were first listed. Module 1 has no session-notes file; I rebuilt this from those chats.</p>
       </div>
     </div>
   </div>
